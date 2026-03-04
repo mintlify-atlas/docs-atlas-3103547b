@@ -1,0 +1,563 @@
+---
+title: AI Integration
+description: Backend selection, model options, thinking levels, and custom prompts in Jean
+---
+
+## Overview
+
+Jean supports three AI CLI backends (Claude CLI, Codex CLI, and OpenCode) with flexible model selection, thinking levels, and customizable system prompts. All AI interactions run locally through your installed CLI tools.
+
+## Key Capabilities
+
+### Backend Selection
+
+Jean supports three CLI backends:
+
+**Claude CLI** (Anthropic):
+- Claude Opus 4.6, Opus 4.5
+- Claude Sonnet 4.6, Sonnet 4.5
+- Claude Haiku
+- Extended thinking (Think, Megathink, Ultrathink)
+- Adaptive thinking with effort levels (Opus 4.6)
+
+**Codex CLI** (OpenAI):
+- GPT 5.3 Codex
+- GPT 5.2 Codex
+- GPT 5.1 Codex Max
+- GPT 5.2
+- GPT 5.1 Codex Mini
+- Reasoning effort levels (low, medium, high, xhigh)
+- Multi-agent collaboration (experimental)
+
+**OpenCode** (Community):
+- Model routing through `opencode/` prefix
+- Community-driven development
+- Compatible with OpenCode CLI
+
+**Backend configuration:**
+```typescript
+type CliBackend = 'claude' | 'codex' | 'opencode'
+
+interface AppPreferences {
+  default_backend: CliBackend              // Global default
+}
+
+interface Project {
+  default_backend?: string | null          // Per-project override
+}
+```
+
+### Model Selection
+
+**Claude Models:**
+```typescript
+type ClaudeModel = 
+  | 'opus'        // Claude Opus 4.6
+  | 'opus-4.5'    // Claude Opus 4.5
+  | 'sonnet'      // Claude Sonnet 4.6
+  | 'sonnet-4.5'  // Claude Sonnet 4.5
+  | 'haiku'       // Claude Haiku
+
+const modelOptions = [
+  { value: 'opus', label: 'Claude Opus 4.6' },
+  { value: 'opus-4.5', label: 'Claude Opus 4.5' },
+  { value: 'sonnet', label: 'Claude Sonnet 4.6' },
+  { value: 'sonnet-4.5', label: 'Claude Sonnet 4.5' },
+  { value: 'haiku', label: 'Claude Haiku' },
+]
+```
+
+**Codex Models:**
+```typescript
+type CodexModel = 
+  | 'gpt-5.3-codex'
+  | 'gpt-5.2-codex'
+  | 'gpt-5.1-codex-max'
+  | 'gpt-5.2'
+  | 'gpt-5.1-codex-mini'
+
+interface AppPreferences {
+  selected_codex_model: CodexModel
+  default_codex_reasoning_effort: CodexReasoningEffort
+  codex_multi_agent_enabled: boolean
+  codex_max_agent_threads: number  // 1-8
+}
+```
+
+**OpenCode Models:**
+```typescript
+type OpenCodeModel = `opencode/${string}`
+
+interface AppPreferences {
+  selected_opencode_model: string  // e.g., 'opencode/gpt-5.3-codex'
+}
+```
+
+### Thinking Levels
+
+**Claude extended thinking:**
+```typescript
+type ThinkingLevel = 'off' | 'think' | 'megathink' | 'ultrathink'
+
+const thinkingLevelOptions = [
+  { value: 'off', label: 'Off' },
+  { value: 'think', label: 'Think (4K)' },
+  { value: 'megathink', label: 'Megathink (10K)' },
+  { value: 'ultrathink', label: 'Ultrathink (32K)' },
+]
+```
+
+**Token allocations:**
+- Off: No extended thinking
+- Think: 4,000 thinking tokens
+- Megathink: 10,000 thinking tokens
+- Ultrathink: 32,000 thinking tokens
+
+**Adaptive thinking (Opus 4.6 only):**
+```typescript
+type EffortLevel = 'low' | 'medium' | 'high' | 'max'
+
+const effortLevelOptions = [
+  { value: 'low', label: 'Low', description: 'Minimal thinking' },
+  { value: 'medium', label: 'Medium', description: 'Moderate thinking' },
+  { value: 'high', label: 'High', description: 'Deep reasoning' },
+  { value: 'max', label: 'Max', description: 'No limits' },
+]
+```
+
+**Codex reasoning effort:**
+```typescript
+type CodexReasoningEffort = 'low' | 'medium' | 'high' | 'xhigh'
+```
+
+### Provider Profiles
+
+Route requests through alternative API providers:
+
+**Predefined profiles:**
+```typescript
+const PREDEFINED_CLI_PROFILES: CustomCliProfile[] = [
+  {
+    name: 'OpenRouter',
+    settings_json: JSON.stringify({
+      env: {
+        ANTHROPIC_BASE_URL: 'https://openrouter.ai/api',
+        ANTHROPIC_AUTH_TOKEN: '<your_api_key>',
+      }
+    }),
+  },
+  {
+    name: 'MiniMax',
+    supports_thinking: false,
+    settings_json: JSON.stringify({
+      env: {
+        ANTHROPIC_BASE_URL: 'https://api.minimax.io/anthropic',
+        ANTHROPIC_AUTH_TOKEN: '<your-minimax-api-key>',
+        ANTHROPIC_MODEL: 'MiniMax-M2.5',
+      }
+    }),
+  },
+  // ... Z.ai, Moonshot
+]
+```
+
+**Configuration:**
+```typescript
+interface AppPreferences {
+  custom_cli_profiles: CustomCliProfile[]  // User-defined profiles
+  default_provider: string | null          // null = Anthropic direct
+}
+
+interface Project {
+  default_provider?: string | null         // Per-project override
+}
+```
+
+### Custom System Prompts
+
+**Global system prompt:**
+```typescript
+interface MagicPrompts {
+  global_system_prompt: string | null  // Appended to every session
+}
+```
+
+**Default global prompt:**
+```typescript
+const DEFAULT_GLOBAL_SYSTEM_PROMPT = `### 1. Plan Mode Default
+- Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions)
+- If something goes sideways, STOP and re-plan immediately
+- Use plan mode for verification steps, not just building
+- Write detailed specs upfront to reduce ambiguity
+
+### 2. Subagent Strategy to keep main context window clean
+- Offload research, exploration, and parallel analysis to subagents
+- For complex problems, throw more compute at it via subagents
+- One task per subagent for focused execution
+
+### 3. Self-Improvement Loop
+- After ANY correction: update '.ai/lessons.md' with the pattern
+- Write rules for yourself that prevent the same mistake
+- Ruthlessly iterate on these lessons
+
+### 4. Verification Before Done
+- Never mark complete without proving it works
+- Run tests, check logs, demonstrate correctness
+
+### 5. Demand Elegance (Balanced)
+- For non-trivial changes: pause and ask "is there a more elegant way?"
+- Skip this for simple, obvious fixes
+
+### 6. Autonomous Bug Fixing
+- When given a bug report: just fix it
+- Point at logs, errors, failing tests → then resolve them`
+```
+
+**Project-specific prompts:**
+```typescript
+interface Project {
+  custom_system_prompt?: string  // Appended after global prompt
+}
+```
+
+**Example project prompt:**
+```markdown
+## Code Style
+- Use TypeScript strict mode
+- Prefer functional components  
+- All new features require tests
+
+## Architecture
+- Follow Zustand + TanStack Query pattern
+- Keep components under 300 lines
+- No prop drilling - use stores
+```
+
+### Parallel Execution
+
+Optional system prompt to encourage sub-agent parallelism:
+
+```typescript
+interface AppPreferences {
+  parallel_execution_prompt_enabled: boolean
+}
+
+const DEFAULT_PARALLEL_EXECUTION_PROMPT = `In plan mode, structure plans so subagents can work simultaneously. In build/execute mode, use subagents in parallel for faster implementation.
+
+When launching multiple Task subagents, prefer sending them in a single message rather than sequentially. Group independent work items into parallel Task calls.`
+```
+
+## How to Use
+
+### Selecting Backend & Model
+
+**Global defaults:**
+1. Open Settings (Cmd/Ctrl + ,)
+2. Navigate to AI section
+3. Choose default backend (Claude/Codex/OpenCode)
+4. Select default model
+5. Set thinking/effort levels
+
+**Per-session:**
+1. Open chat session
+2. Use toolbar dropdowns
+3. Change model, thinking level, backend
+4. Settings persist for session
+
+**Per-project:**
+1. Right-click project → Settings
+2. AI pane
+3. Set default backend and provider
+4. New sessions inherit these settings
+
+### Configuring Thinking Levels
+
+**When to use each level:**
+
+**Off:**
+- Simple refactors
+- Straightforward implementations
+- Following clear patterns
+- Quick fixes
+
+**Think (4K):**
+- Standard development tasks
+- Code review
+- Testing strategies
+- Documentation
+
+**Megathink (10K):**
+- Complex algorithms
+- Architecture decisions
+- Performance optimization
+- Edge case analysis
+
+**Ultrathink (32K):**
+- Novel problem solving
+- Research and exploration
+- Security analysis
+- Deep debugging
+
+### Using Adaptive Thinking
+
+**Opus 4.6 effort levels:**
+
+**Low:**
+- Quick questions
+- Obvious solutions
+- Pattern following
+
+**Medium:**
+- Normal development
+- Code generation
+- Light problem solving
+
+**High:**
+- Complex logic
+- Multiple constraints
+- Performance critical
+
+**Max:**
+- Unlimited reasoning
+- Novel approaches
+- Research problems
+
+### Setting Up Providers
+
+**Adding custom provider:**
+1. Settings → Providers
+2. Click "Add Profile"
+3. Enter name and settings JSON
+4. Configure environment variables:
+   ```json
+   {
+     "env": {
+       "ANTHROPIC_BASE_URL": "https://your-provider.com/api",
+       "ANTHROPIC_AUTH_TOKEN": "your-api-key"
+     }
+   }
+   ```
+5. Save profile
+
+**Using provider:**
+1. Session toolbar → Provider dropdown
+2. Select custom profile
+3. Or set as default in Settings
+
+### Customizing System Prompts
+
+**Global prompt:**
+1. Settings → AI → Magic Prompts
+2. Find "Global System Prompt"
+3. Edit in text editor
+4. Applies to all future messages
+
+**Project prompt:**
+1. Project Settings → AI pane
+2. Enter project-specific prompt
+3. Appended after global prompt
+4. Inherited by all sessions in project
+
+**Testing prompts:**
+1. Create test session
+2. Ask AI to explain its instructions
+3. Verify prompts are working
+4. Adjust as needed
+
+## Configuration Options
+
+### Settings → AI
+
+**Claude Settings:**
+```typescript
+selected_model: ClaudeModel
+thinking_level: ThinkingLevel
+default_effort_level: EffortLevel
+```
+
+**Codex Settings:**
+```typescript
+default_backend: CliBackend
+selected_codex_model: CodexModel
+default_codex_reasoning_effort: CodexReasoningEffort
+codex_multi_agent_enabled: boolean
+codex_max_agent_threads: number
+```
+
+**OpenCode Settings:**
+```typescript
+selected_opencode_model: string
+```
+
+**Provider Settings:**
+```typescript
+default_provider: string | null
+custom_cli_profiles: CustomCliProfile[]
+```
+
+**Prompt Settings:**
+```typescript
+magic_prompts: {
+  global_system_prompt: string | null
+  parallel_execution: string | null
+}
+parallel_execution_prompt_enabled: boolean
+```
+
+### Per-Session Settings
+
+Configurable in chat toolbar:
+- Model selection
+- Thinking level
+- Effort level (if supported)
+- Backend
+- Provider profile
+
+### Mode-Specific Overrides
+
+**Build mode:**
+```typescript
+build_model: string | null              // Override model
+build_backend: string | null            // Override backend
+build_thinking_level: string | null     // Override thinking
+```
+
+**Yolo mode:**
+```typescript
+yolo_model: string | null
+yolo_backend: string | null
+yolo_thinking_level: string | null
+```
+
+## Best Practices
+
+### Model Selection Strategy
+
+**By task complexity:**
+```
+Simple → Haiku / Codex Mini
+Standard → Sonnet / Codex 5.2
+Complex → Opus / Codex 5.3
+```
+
+**By project phase:**
+```
+Exploration → Opus with Ultrathink
+Implementation → Sonnet with Think
+Refactoring → Sonnet with Megathink
+Review → Haiku or Codex Mini
+```
+
+### Thinking Level Guidelines
+
+**Match to problem type:**
+- Deterministic tasks → Off
+- Creative tasks → Think+
+- Research → Megathink/Ultrathink
+- Debugging → Megathink
+
+**Token budget awareness:**
+- Thinking tokens count against limits
+- Ultrathink = expensive
+- Start lower, increase if needed
+
+### System Prompt Design
+
+**Keep prompts actionable:**
+```markdown
+✅ Good:
+- Use TypeScript strict mode
+- Add tests for new features
+- Keep functions under 50 lines
+
+❌ Bad:
+- Write good code
+- Be careful
+- Think about quality
+```
+
+**Layer prompts:**
+```
+Global Prompt (workflow & philosophy)
+  ↓
+Project Prompt (architecture & style)
+  ↓
+Message (specific task)
+```
+
+**Test with examples:**
+- Ask AI to implement something
+- Verify it follows guidelines
+- Adjust prompt if needed
+- Iterate until consistent
+
+### Provider Configuration
+
+**When to use providers:**
+- Lower costs (OpenRouter)
+- Regional models (MiniMax, Z.ai)
+- Custom deployments
+- Rate limit management
+
+**Provider selection:**
+- Performance: Anthropic direct > OpenRouter > Others
+- Cost: Regional providers < OpenRouter < Anthropic
+- Reliability: Anthropic > OpenRouter > Others
+
+### Performance Optimization
+
+**Reduce latency:**
+- Use appropriate thinking levels
+- Choose closest provider
+- Batch related questions
+- Clear unused context
+
+**Control costs:**
+- Use Haiku for simple tasks
+- Disable thinking when not needed
+- Archive finished sessions
+- Monitor token usage
+
+### Multi-Backend Workflows
+
+**Leverage strengths:**
+- Claude Opus: Architecture & planning
+- Codex: Code generation
+- Sonnet: Code review & testing
+- Haiku: Quick questions
+
+**Example workflow:**
+```
+1. Plan with Opus (Megathink)
+2. Implement with Codex 5.3
+3. Review with Sonnet (Think)
+4. Polish with Codex Mini
+```
+
+### Advanced Configuration
+
+**Per-magic-prompt overrides:**
+```typescript
+interface MagicPromptModels {
+  investigate_issue_model: MagicPromptModel
+  investigate_pr_model: MagicPromptModel
+  commit_message_model: MagicPromptModel
+  // ... one per magic prompt
+}
+
+interface MagicPromptBackends {
+  investigate_issue_backend: string | null
+  // ... one per magic prompt
+}
+```
+
+**Use cases:**
+- Expensive models for investigation
+- Fast models for commit messages
+- Specific backends for specific tasks
+
+**Configuration:**
+1. Settings → AI → Magic Prompts
+2. Expand advanced options
+3. Set model/backend per prompt type
+4. Falls back to session defaults

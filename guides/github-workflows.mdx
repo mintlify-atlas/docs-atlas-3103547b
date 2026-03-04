@@ -1,0 +1,473 @@
+---
+title: GitHub Workflows
+description: Integrate with GitHub issues, pull requests, and CI/CD
+---
+
+## Overview
+
+Jean deeply integrates with GitHub to streamline issue-driven development. You can browse issues, create worktrees from issues, open PRs, track CI status, and investigate workflow failures—all without leaving Jean.
+
+**Prerequisites:**
+- Repository must have a GitHub remote
+- GitHub CLI (`gh`) must be installed and authenticated
+- (Optional) `github` MCP server for enhanced API access
+
+## Setting Up GitHub Integration
+
+<Steps>
+  <Step title="Install GitHub CLI">
+    If not already installed:
+
+    **Mac (Homebrew)**:
+    ```bash
+    brew install gh
+    ```
+
+    **Windows (Scoop)**:
+    ```bash
+    scoop install gh
+    ```
+
+    **Linux (apt)**:
+    ```bash
+    sudo apt install gh
+    ```
+  </Step>
+
+  <Step title="Authenticate">
+    Run `gh auth login` and follow the prompts to authenticate with GitHub.
+
+    Choose:
+    - **GitHub.com** (or GitHub Enterprise if applicable)
+    - **HTTPS** protocol
+    - **Login with web browser**
+
+    Verify authentication with `gh auth status`.
+  </Step>
+
+  <Step title="(Optional) Enable GitHub MCP Server">
+    For enhanced GitHub API access, install the GitHub MCP server:
+
+    Add to `~/.claude.json`:
+    ```json
+    {
+      "mcpServers": {
+        "github": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-github"],
+          "env": {
+            "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_your_token_here"
+          }
+        }
+      }
+    }
+    ```
+
+    Create a personal access token at https://github.com/settings/tokens with scopes:
+    - `repo` (full control of private repositories)
+    - `read:org` (read org and team membership)
+
+    Enable the server in Preferences → MCP Servers.
+  </Step>
+
+  <Step title="Verify Integration">
+    Press `Cmd+M` and navigate to the **Issues** or **Pull Requests** tab. If you see your repository's issues/PRs, integration is working.
+
+    If you see an error, check:
+    - `gh auth status` shows you're logged in
+    - The current project has a GitHub remote (`git remote -v`)
+    - You have access to the repository
+  </Step>
+</Steps>
+
+## Issue-Driven Development Workflow
+
+This is the recommended workflow for feature development and bug fixes.
+
+<Steps>
+  <Step title="Browse Issues">
+    Press `Cmd+M` → **Issues** tab to see all open issues in your repository.
+
+    You can:
+    - Filter by label, milestone, or assignee
+    - Search by title or number
+    - Sort by created date, updated date, or comment count
+  </Step>
+
+  <Step title="Select an Issue">
+    Click an issue to view:
+    - Title and number
+    - Full description
+    - All comments in chronological order
+    - Labels (bug, enhancement, etc.)
+    - Assignees and milestone
+  </Step>
+
+  <Step title="Create Worktree from Issue">
+    Click **Investigate Issue**. Jean will:
+    1. Generate a branch name from the issue title (e.g., `fix-login-timeout-#123`)
+    2. Create a worktree from the default branch
+    3. Save issue context to `.github/issues/<number>.json`
+    4. Start a chat session with a prompt to investigate the issue
+    5. Link the issue number to the worktree (for later PR creation)
+  </Step>
+
+  <Step title="Work on the Issue">
+    Claude will:
+    - Analyze the issue description and comments
+    - Explore the codebase to find relevant code
+    - Identify the root cause (or where to implement the feature)
+    - Propose a solution with specific file changes
+
+    You can iterate in the chat to refine the approach.
+  </Step>
+
+  <Step title="Implement the Fix">
+    Ask Claude to implement the solution. Claude will:
+    - Make code changes
+    - Run tests
+    - Verify the fix works
+
+    Review the changes with `Cmd+G` (git diff viewer).
+  </Step>
+
+  <Step title="Commit Changes">
+    Press `Cmd+Shift+C` to open the commit dialog.
+
+    Click **Generate with AI** to create a commit message. The message will reference the issue number automatically (e.g., "Fix login timeout (#123)").
+
+    Commit and push the changes.
+  </Step>
+
+  <Step title="Create Pull Request">
+    Press `Cmd+M` → **Open PR**. Jean will:
+    1. Analyze commits and diff
+    2. Generate a PR title and description
+    3. Include "Fixes #123" in the PR body (to auto-close the issue on merge)
+    4. Create the PR on GitHub
+    5. Link the PR to your worktree
+
+    The PR appears in the sidebar with status indicators.
+  </Step>
+
+  <Step title="Address Review Feedback">
+    If reviewers request changes:
+    1. Press `Cmd+M` → **Investigate PR**
+    2. Jean will load the PR context (including review comments)
+    3. Claude will summarize feedback and suggest fixes
+    4. Implement changes, commit, and push
+    5. PR updates automatically on GitHub
+  </Step>
+
+  <Step title="Merge and Clean Up">
+    Once approved:
+    1. Merge the PR on GitHub (or use `Cmd+M` → **Merge** for local merge)
+    2. Jean will auto-archive the worktree (if enabled in Preferences)
+    3. The issue closes automatically (due to "Fixes #123" in PR body)
+  </Step>
+</Steps>
+
+## Pull Request Review Workflow
+
+Jean helps you review PRs from others (or your own PRs from a different perspective).
+
+<Steps>
+  <Step title="Browse Pull Requests">
+    Press `Cmd+M` → **Pull Requests** tab to see all open PRs.
+
+    Filter by:
+    - Status (draft, open, approved, changes requested)
+    - Author
+    - Base branch
+    - CI check status (passing, failing, pending)
+  </Step>
+
+  <Step title="Check Out PR">
+    Click a PR and select **Investigate PR**. Jean will:
+    1. Check out the PR branch (if not already)
+    2. Create a worktree (if you don't have one for this branch)
+    3. Save PR context to `.github/pulls/<number>.json`
+    4. Start a chat session with a prompt to review the PR
+  </Step>
+
+  <Step title="AI-Assisted Review">
+    Claude will:
+    - Analyze what the PR is trying to accomplish
+    - Review the code changes
+    - Check for security issues (see [Security Review Checklist](#security-review-checklist))
+    - Summarize reviewer feedback (if any)
+    - Identify action items to get the PR merged
+  </Step>
+
+  <Step title="Run Code Review">
+    Press `Cmd+M` → **Review Code** to get structured feedback.
+
+    The review panel shows:
+    - **Summary**: Overview of changes
+    - **Findings**: Issues by severity (critical, warning, suggestion, praise)
+    - **Approval Status**: Approved, Changes Requested, or Needs Discussion
+  </Step>
+
+  <Step title="Test the Changes">
+    Run the `jean.json` run script (`Cmd+R`) to start the dev server or tests.
+
+    Manually test the feature or bug fix.
+  </Step>
+
+  <Step title="Leave Review Comments">
+    If you find issues:
+    - Ask Claude to explain specific code sections
+    - Request alternative implementations
+    - Add review comments on GitHub (via web UI or `gh pr review`)
+  </Step>
+
+  <Step title="Approve or Request Changes">
+    Once satisfied (or if changes are needed):
+
+    **Approve**:
+    ```bash
+    gh pr review <number> --approve
+    ```
+
+    **Request Changes**:
+    ```bash
+    gh pr review <number> --request-changes --body "Please address XYZ"
+    ```
+  </Step>
+</Steps>
+
+## Security Review Checklist
+
+When reviewing PRs (especially from external contributors), Jean's PR investigation includes a security checklist:
+
+<Accordion title="Security Checklist Details">
+  **Malicious or Obfuscated Code**
+  - `eval()`, `Function()`, or other code execution
+  - Base64-encoded strings or hex-encoded data
+  - Hidden network calls or data exfiltration
+
+  **Suspicious Dependency Changes**
+  - New dependencies with few downloads or recent creation
+  - Version changes to compromised packages (check npm advisories)
+  - Typosquatting (lodash vs. lodahs)
+
+  **Hardcoded Secrets**
+  - API keys, tokens, passwords in code
+  - Credentials in config files (not .env.example)
+  - Private keys or certificates
+
+  **Backdoors or Unauthorized Access**
+  - Reverse shells or remote access code
+  - Debug endpoints left in production code
+  - Disabled authentication checks
+
+  **Injection Vulnerabilities**
+  - SQL injection (unescaped user input in queries)
+  - Command injection (user input in shell commands)
+  - XSS (unescaped user input in HTML/JS)
+  - Path traversal (user input in file paths)
+
+  **Weakened Security**
+  - Removed authentication or authorization checks
+  - Broadened permissions or access levels
+  - Disabled input validation or sanitization
+
+  **Suspicious System Access**
+  - File system writes to unexpected locations
+  - Environment variable access for sensitive data
+  - Process spawning with user-controlled arguments
+</Accordion>
+
+<Warning>
+  Always run security review for:
+  - PRs from external contributors
+  - Dependency updates (especially major version bumps)
+  - Changes to authentication or authorization code
+  - Any code handling user input or external data
+</Warning>
+
+## CI/CD Integration
+
+Jean tracks GitHub Actions status and helps debug failures.
+
+<Steps>
+  <Step title="View CI Status">
+    Worktrees linked to PRs show CI check status in the sidebar:
+    - **Green checkmark**: All checks passing
+    - **Red X**: One or more checks failing
+    - **Yellow dot**: Checks pending/running
+    - **Gray dash**: No checks configured
+  </Step>
+
+  <Step title="Open GitHub Dashboard">
+    Press `Cmd+Shift+D` to open the GitHub Dashboard.
+
+    This shows:
+    - All open PRs across all projects
+    - CI check status for each PR
+    - Security alerts (Dependabot, advisories)
+    - Recent workflow runs
+  </Step>
+
+  <Step title="Investigate Failed Workflows">
+    Click a failed workflow run and select **Investigate Run**.
+
+    Jean will:
+    1. Fetch workflow logs via `gh run view --log-failed`
+    2. Send logs to Claude with a prompt to analyze the failure
+    3. Claude will:
+       - Identify the failure cause
+       - Determine if it's code, config, or a flaky test
+       - Propose a fix
+  </Step>
+
+  <Step title="Fix and Re-run">
+    Implement the suggested fix, commit, and push.
+
+    Re-run the workflow:
+    ```bash
+    gh run rerun <run-id>
+    ```
+
+    Or re-run from the GitHub Actions UI.
+  </Step>
+</Steps>
+
+## Release Notes Generation
+
+Jean can generate release notes by analyzing commits since the last release.
+
+<Steps>
+  <Step title="Open Magic Modal">
+    Press `Cmd+M` → **Release Notes**.
+  </Step>
+
+  <Step title="Select Previous Release">
+    Jean shows all existing releases (fetched via `gh release list`).
+
+    Select the previous release to use as the starting point (e.g., `v1.2.0`).
+  </Step>
+
+  <Step title="Generate Notes">
+    Jean will:
+    1. Run `git log <previous-tag>..HEAD` to get all commits
+    2. Send commits to a model (Haiku by default)
+    3. Generate release notes with:
+       - **Features**: New functionality
+       - **Fixes**: Bug fixes
+       - **Improvements**: Enhancements to existing features
+       - **Breaking Changes**: API changes requiring user action
+  </Step>
+
+  <Step title="Create Release">
+    Copy the generated notes and create a release:
+
+    **Via GitHub CLI**:
+    ```bash
+    gh release create v1.3.0 --title "Version 1.3.0" --notes "$(pbpaste)"
+    ```
+
+    **Via GitHub UI**: Go to Releases → Draft a new release, paste the notes.
+  </Step>
+</Steps>
+
+## Dependabot and Security Alerts
+
+Jean helps you investigate and fix security vulnerabilities.
+
+<Steps>
+  <Step title="View Security Alerts">
+    Press `Cmd+Shift+D` to open the GitHub Dashboard.
+
+    The **Security** tab shows:
+    - Dependabot alerts (vulnerable dependencies)
+    - Repository security advisories
+    - Alert severity (critical, high, medium, low)
+  </Step>
+
+  <Step title="Investigate Alert">
+    Click an alert and select **Investigate Alert**.
+
+    Jean will:
+    1. Load alert details (CVE, affected versions, severity)
+    2. Search the codebase for usage of the vulnerable package
+    3. Assess actual impact (is the vulnerable function used?)
+    4. Evaluate remediation options (patched version, workarounds, etc.)
+    5. Propose a fix
+  </Step>
+
+  <Step title="Apply Fix">
+    Common fixes:
+    - **Upgrade dependency**: `npm update <package>` or `bun update <package>`
+    - **Remove dependency**: If not needed, uninstall it
+    - **Apply workaround**: Disable vulnerable feature or add input validation
+
+    Test the fix to ensure it doesn't break functionality.
+  </Step>
+
+  <Step title="Commit and Close Alert">
+    Commit the fix with a message referencing the alert:
+    ```
+    fix: upgrade lodash to fix CVE-2023-12345
+    ```
+
+    Push the changes. Dependabot will automatically close the alert once the vulnerable version is no longer in use.
+  </Step>
+</Steps>
+
+## Common Pitfalls
+
+<Warning>
+  **GitHub CLI Not Authenticated**: If you see "gh: command not found" or "authentication required":
+
+  **Solution**: Run `gh auth login` and follow the prompts.
+</Warning>
+
+<Warning>
+  **PR Creation Fails with "No commits"**: You must have at least one commit before creating a PR.
+
+  **Solution**: Make a commit first, or use `git commit --allow-empty -m "Initial commit"` to create an empty commit.
+</Warning>
+
+<Warning>
+  **CI Status Not Updating**: Jean polls GitHub every 60 seconds (configurable in Preferences → General → Remote Poll Interval).
+
+  **Solution**: Wait a minute, or click the worktree to force a refresh.
+</Warning>
+
+<Warning>
+  **Issue Context Not Loading**: If issue investigation fails to load context, check:
+  - The issue exists and is not closed/deleted
+  - You have read access to the repository
+  - GitHub API rate limits (check `gh api rate_limit`)
+
+  **Solution**: Wait for rate limit reset, or use a personal access token with higher limits.
+</Warning>
+
+## Best Practices
+
+<Tip>
+  **Always Create Worktrees from Issues**: This links the issue to your work and makes PR creation seamless. The PR will automatically reference the issue and close it on merge.
+</Tip>
+
+<Tip>
+  **Use Draft PRs for WIP**: When you open a PR early (to get CI feedback), mark it as draft. This signals reviewers that it's not ready for review.
+</Tip>
+
+<Tip>
+  **Review Your Own PRs**: Before requesting review from others, use **Review Code** to catch obvious issues. This reduces review cycles.
+</Tip>
+
+<Tip>
+  **Keep PRs Small**: Smaller PRs are easier to review and faster to merge. If a feature is large, break it into multiple PRs (one per issue).
+</Tip>
+
+<Tip>
+  **Monitor Security Alerts**: Check the GitHub Dashboard (`Cmd+Shift+D`) regularly for new Dependabot alerts. Address critical and high-severity alerts immediately.
+</Tip>
+
+## Next Steps
+
+- [Using Magic Commands](/guides/using-magic-commands) - Deep dive into PR and issue automation
+- [Managing Sessions](/guides/managing-sessions) - Organize work within issue-driven worktrees
+- [Customization](/guides/customization) - Customize magic prompts for your team's workflow

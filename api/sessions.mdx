@@ -1,0 +1,238 @@
+---
+title: Sessions API
+description: API endpoints for managing chat sessions
+---
+
+The Sessions API allows you to manage chat sessions within worktrees.
+
+## List Sessions
+
+Get all sessions for a specific worktree.
+
+<ParamField path="worktreeId" type="string" required>
+  The unique identifier of the worktree
+</ParamField>
+
+### Response
+
+<ResponseField name="sessions" type="array">
+  Array of session objects
+  
+  <Expandable title="Session Object">
+    <ResponseField name="id" type="string">
+      Unique session identifier
+    </ResponseField>
+    <ResponseField name="worktree_id" type="string">
+      Parent worktree ID
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Session name
+    </ResponseField>
+    <ResponseField name="created_at" type="number">
+      Unix timestamp when session was created
+    </ResponseField>
+    <ResponseField name="execution_mode" type="string">
+      Execution mode: `plan`, `build`, or `yolo`
+    </ResponseField>
+    <ResponseField name="model" type="string">
+      AI model used for this session
+    </ResponseField>
+    <ResponseField name="thinking_level" type="string">
+      Thinking level: `off`, `think`, `megathink`, or `ultrathink`
+    </ResponseField>
+    <ResponseField name="backend" type="string">
+      AI backend: `claude`, `codex`, or `opencode`
+    </ResponseField>
+    <ResponseField name="archived_at" type="number">
+      Unix timestamp when session was archived (if archived)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Request
+
+```bash cURL
+curl -X GET "http://localhost:3456/api/worktrees/{worktreeId}/sessions" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+## Create Session
+
+Create a new chat session in a worktree.
+
+<ParamField path="worktreeId" type="string" required>
+  The unique identifier of the worktree
+</ParamField>
+
+<ParamField body="name" type="string">
+  Session name (auto-generated if not provided)
+</ParamField>
+
+<ParamField body="execution_mode" type="string">
+  Execution mode: `plan`, `build`, or `yolo` (default: `plan`)
+</ParamField>
+
+<ParamField body="model" type="string">
+  AI model to use (inherits from project/global settings if not specified)
+</ParamField>
+
+<ParamField body="backend" type="string">
+  AI backend: `claude`, `codex`, or `opencode`
+</ParamField>
+
+### Response
+
+Returns the newly created session object.
+
+### Example Request
+
+```bash cURL
+curl -X POST "http://localhost:3456/api/worktrees/{worktreeId}/sessions" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Feature implementation",
+    "execution_mode": "plan",
+    "backend": "claude"
+  }'
+```
+
+## Get Session
+
+Retrieve details about a specific session.
+
+<ParamField path="sessionId" type="string" required>
+  The unique identifier of the session
+</ParamField>
+
+### Response
+
+Returns a session object with full details including message history.
+
+### Example Request
+
+```bash cURL
+curl -X GET "http://localhost:3456/api/sessions/{sessionId}" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+## Update Session
+
+Update session properties.
+
+<ParamField path="sessionId" type="string" required>
+  The unique identifier of the session
+</ParamField>
+
+<ParamField body="name" type="string">
+  New session name
+</ParamField>
+
+<ParamField body="execution_mode" type="string">
+  New execution mode
+</ParamField>
+
+### Example Request
+
+```bash cURL
+curl -X PATCH "http://localhost:3456/api/sessions/{sessionId}" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated feature name"
+  }'
+```
+
+## Archive Session
+
+Archive a session (soft delete).
+
+<ParamField path="sessionId" type="string" required>
+  The unique identifier of the session
+</ParamField>
+
+### Example Request
+
+```bash cURL
+curl -X POST "http://localhost:3456/api/sessions/{sessionId}/archive" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+## Delete Session
+
+Permanently delete a session.
+
+<ParamField path="sessionId" type="string" required>
+  The unique identifier of the session
+</ParamField>
+
+<Warning>
+  This operation is irreversible. The session and all its message history will be permanently deleted.
+</Warning>
+
+### Example Request
+
+```bash cURL
+curl -X DELETE "http://localhost:3456/api/sessions/{sessionId}" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+## WebSocket Events
+
+When connected to the WebSocket, you'll receive real-time updates about session changes:
+
+### Session Created
+
+```json
+{
+  "event": "session-created",
+  "data": {
+    "session": { /* session object */ }
+  }
+}
+```
+
+### Session Updated
+
+```json
+{
+  "event": "session-updated",
+  "data": {
+    "session_id": "uuid",
+    "updates": { /* changed fields */ }
+  }
+}
+```
+
+### Session Archived
+
+```json
+{
+  "event": "session-archived",
+  "data": {
+    "session_id": "uuid"
+  }
+}
+```
+
+### Session Deleted
+
+```json
+{
+  "event": "session-deleted",
+  "data": {
+    "session_id": "uuid"
+  }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Chat API" icon="comments" href="/api/chat">
+    Send messages and receive responses in a session
+  </Card>
+  <Card title="Worktrees API" icon="code-branch" href="/api/worktrees">
+    Manage worktrees that contain sessions
+  </Card>
+</CardGroup>

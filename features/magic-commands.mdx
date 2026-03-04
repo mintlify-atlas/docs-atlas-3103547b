@@ -1,0 +1,794 @@
+---
+title: Magic Commands
+description: AI-powered automation for GitHub issues, PRs, commits, reviews, and more
+---
+
+## Overview
+
+Magic commands are AI-powered automation features that streamline common development workflows. Each command uses customizable prompts and can be configured with specific models, backends, and providers.
+
+## Available Commands
+
+Jean includes 14 magic commands, each with a dedicated prompt template:
+
+### GitHub Investigation
+
+#### Investigate Issue
+**Trigger:** Click "Investigate" on GitHub issue
+
+**What it does:**
+1. Creates worktree for the issue
+2. Loads issue description and comments
+3. Analyzes problem and proposes solution
+4. Identifies root cause
+5. Checks for regressions
+6. Suggests implementation approach
+
+**Default prompt structure:**
+```typescript
+const DEFAULT_INVESTIGATE_ISSUE_PROMPT = `<task>
+Investigate the loaded GitHub {issueWord} ({issueRefs})
+</task>
+
+<instructions>
+1. Read the issue context file(s) to understand the full problem
+2. Analyze the problem:
+   - What is expected vs actual behavior?
+   - Error messages, stack traces, reproduction steps?
+3. Explore the codebase to find relevant code
+4. Identify root cause
+5. Check for regression
+6. Propose solution with specific files to modify
+</instructions>`
+```
+
+**Configuration:**
+```typescript
+investigate_issue: string | null              // Custom prompt
+investigate_issue_model: 'opus' | 'sonnet' | ...  // Default: opus
+investigate_issue_backend: string | null      // Default: session backend
+investigate_issue_provider: string | null     // Default: session provider
+```
+
+#### Investigate PR
+**Trigger:** Click "Investigate" on pull request
+
+**What it does:**
+1. Checks out PR branch as worktree
+2. Loads PR description, reviews, and comments
+3. Analyzes changes and approach
+4. **Security review** - checks for malicious code
+5. Identifies action items from reviews
+6. Proposes next steps
+
+**Security checks include:**
+- Malicious or obfuscated code
+- Suspicious dependency changes
+- Hardcoded secrets or credentials
+- Backdoors or unauthorized access
+- Injection vulnerabilities
+- Weakened authentication/permissions
+
+**Configuration:**
+```typescript
+investigate_pr: string | null
+investigate_pr_model: 'opus' | 'sonnet' | ...
+investigate_pr_backend: string | null
+investigate_pr_provider: string | null
+```
+
+#### Investigate Workflow Run
+**Trigger:** Click "Investigate" on failed CI workflow
+
+**What it does:**
+1. Fetches workflow run logs via `gh run view {runId} --log-failed`
+2. Analyzes error output
+3. Explores relevant code
+4. Determines if code issue, config issue, or flaky test
+5. Proposes fix with specific changes
+
+**Default prompt:**
+```typescript
+const DEFAULT_INVESTIGATE_WORKFLOW_RUN_PROMPT = `<task>
+Investigate the failed GitHub Actions workflow run for "{workflowName}" on branch \`{branch}\`
+</task>
+
+<context>
+- Workflow: {workflowName}
+- Commit/PR: {displayTitle}
+- Branch: {branch}
+- Run URL: {runUrl}
+</context>
+
+<instructions>
+1. Use GitHub CLI: \`gh run view {runId} --log-failed\`
+2. Read error output to identify failure cause
+3. Explore relevant code in codebase
+4. Determine if code issue, config issue, or flaky test
+5. Propose fix with specific files and changes
+</instructions>`
+```
+
+### Security Analysis
+
+#### Investigate Security Alert
+**Trigger:** View Dependabot vulnerability alerts
+
+**What it does:**
+1. Reads vulnerability details (CVE, GHSA, severity)
+2. Identifies affected dependency and version range
+3. Searches codebase for package usage
+4. Assesses actual impact (is vulnerable code used?)
+5. Evaluates remediation options
+6. Proposes fix with compatibility assessment
+
+**Key focus:**
+- Is the vulnerability actually exploitable?
+- Is the vulnerable function/API used?
+- Breaking changes in patched version?
+
+**Configuration:**
+```typescript
+investigate_security_alert: string | null
+investigate_security_alert_model: 'opus' | ...
+investigate_security_alert_backend: string | null
+```
+
+#### Investigate Advisory
+**Trigger:** View repository security advisories
+
+**What it does:**
+1. Reads full vulnerability details (GHSA, CVE, CWE)
+2. Understands vulnerability type and preconditions
+3. Locates vulnerable code in repository
+4. Develops comprehensive fix
+5. Verifies completeness across codebase
+6. Documents vulnerability and remediation
+
+**Security-first approach:**
+- Think like an attacker
+- Check for bypass attempts
+- Look for same pattern elsewhere
+
+**Configuration:**
+```typescript
+investigate_advisory: string | null
+investigate_advisory_model: 'opus' | ...
+```
+
+#### Investigate Linear Issue
+**Trigger:** Click "Investigate" on Linear issue
+
+**What it does:**
+Similar to GitHub issue investigation but for Linear:
+1. Loads Linear issue context (embedded in prompt)
+2. Analyzes problem
+3. Explores codebase
+4. Identifies root cause
+5. Proposes solution
+
+**Note:** Linear context is embedded in the prompt since Claude CLI cannot access Linear API directly.
+
+### Git Operations
+
+#### Commit Message
+**Trigger:** Toolbar → Commit button
+
+**What it does:**
+1. Runs `git status --porcelain`
+2. Gets staged diff
+3. Reads recent commits for style
+4. Generates concise commit message
+5. Creates commit with AI message
+6. Optionally pushes to remote
+
+**Uses JSON schema for structured output:**
+```typescript
+interface CommitMessageSchema {
+  message: string  // Generated commit message
+}
+```
+
+**Configuration:**
+```typescript
+commit_message: string | null
+commit_message_model: 'haiku' | ...  // Default: haiku (fast)
+```
+
+**Response structure:**
+```typescript
+interface CreateCommitResponse {
+  commit_hash: string
+  message: string
+  pushed: boolean
+  push_fell_back: boolean           // Created new branch?
+  push_permission_denied: boolean   // Auth error?
+}
+```
+
+#### PR Content
+**Trigger:** Toolbar → Open PR button
+
+**What it does:**
+1. Collects branch info and commit history
+2. Gets diff between branches
+3. Generates PR title and description
+4. Creates PR on GitHub via `gh pr create`
+5. Links PR to worktree
+
+**Default prompt:**
+```typescript
+const DEFAULT_PR_CONTENT_PROMPT = `<task>Generate a pull request title and description</task>
+
+<context>
+<source_branch>{current_branch}</source_branch>
+<target_branch>{target_branch}</target_branch>
+<commit_count>{commit_count}</commit_count>
+</context>
+
+<commits>
+{commits}
+</commits>
+
+<diff>
+{diff}
+</diff>`
+```
+
+**JSON schema output:**
+```typescript
+interface PrContentSchema {
+  title: string
+  body: string
+}
+```
+
+**Configuration:**
+```typescript
+pr_content: string | null
+pr_content_model: 'haiku' | ...  // Default: haiku
+```
+
+#### Code Review
+**Trigger:** Toolbar → Review button
+
+**What it does:**
+1. Collects branch info and commits
+2. Gets diff and uncommitted changes
+3. Performs comprehensive code review
+4. Returns structured findings
+5. Provides approval status
+
+**Review focus areas:**
+- Security & supply-chain risks
+- Performance issues
+- Code quality and maintainability
+- Potential bugs
+- Best practices violations
+
+**Structured output:**
+```typescript
+interface ReviewResponse {
+  summary: string
+  findings: ReviewFinding[]
+  approval_status: 'approved' | 'changes_requested' | 'needs_discussion'
+}
+
+interface ReviewFinding {
+  severity: 'critical' | 'warning' | 'suggestion' | 'praise'
+  file: string
+  line?: number
+  title: string
+  description: string
+  suggestion?: string
+}
+```
+
+**UI integration:**
+- Findings displayed in ReviewResultsPanel
+- Track which findings have been fixed
+- Persisted in UI state
+
+**Configuration:**
+```typescript
+code_review: string | null
+code_review_model: 'haiku' | ...  // Default: haiku
+```
+
+#### Resolve Conflicts
+**Trigger:** Automatic when merge/rebase conflicts detected
+
+**What it does:**
+1. Appends conflict resolution prompt to message
+2. Shows conflict diff
+3. AI explains what's conflicting
+4. Guides through resolving each conflict
+5. Stages files with `git add`
+6. Continues operation until complete
+
+**Default prompt:**
+```typescript
+const DEFAULT_RESOLVE_CONFLICTS_PROMPT = `Please help me resolve these conflicts. Analyze the diff above, explain what's conflicting in each file, and guide me through resolving each conflict.
+
+After resolving each file's conflicts, stage it with \`git add\`. Then run the appropriate continue command (\`git rebase --continue\`, \`git merge --continue\`, or \`git cherry-pick --continue\`).`
+```
+
+**Configuration:**
+```typescript
+resolve_conflicts: string | null
+resolve_conflicts_model: 'opus' | ...  // Default: opus
+```
+
+#### Release Notes
+**Trigger:** Manual invocation
+
+**What it does:**
+1. Lists commits since last release
+2. Fetches previous release info via `gh release list`
+3. Generates structured release notes
+4. Groups into categories (Features, Fixes, etc.)
+5. Filters out merge commits and trivial changes
+
+**Default prompt:**
+```typescript
+const DEFAULT_RELEASE_NOTES_PROMPT = `Generate release notes for changes since the \`{tag}\` release ({previous_release_name}).
+
+## Commits since {tag}
+{commits}
+
+## Instructions
+- Write concise release title
+- Group changes: Features, Fixes, Improvements, Breaking Changes
+- Use bullet points with brief descriptions
+- Reference PR numbers if visible
+- Skip merge commits and trivial changes
+- Past tense ("Added", "Fixed", "Improved")
+- Keep user-facing (skip internal details)`
+```
+
+**Configuration:**
+```typescript
+release_notes: string | null
+release_notes_model: 'haiku' | ...  // Default: haiku
+```
+
+### Session Management
+
+#### Session Naming
+**Trigger:** Automatic on first message (if enabled)
+
+**What it does:**
+1. Analyzes first user message
+2. Generates 4-5 word session name
+3. Updates session title
+4. Uses sentence case
+5. Avoids generic names
+
+**Rules:**
+- Maximum 4-5 words
+- Sentence case only
+- Descriptive and concise
+- No special characters
+- No commit-style prefixes (Add, Fix, Update)
+
+**JSON schema output:**
+```typescript
+interface SessionNamingSchema {
+  session_name: string
+}
+```
+
+**Configuration:**
+```typescript
+auto_session_naming: boolean              // Enable/disable
+session_naming: string | null             // Custom prompt
+session_naming_model: 'haiku' | ...       // Default: haiku
+```
+
+#### Session Recap
+**Trigger:** Returning to unfocused session (if enabled)
+
+**What it does:**
+1. Summarizes entire conversation
+2. Extracts main goal and status
+3. Highlights last completed action
+4. Shows in popup before resuming
+
+**Structured output:**
+```typescript
+interface SessionDigest {
+  chat_summary: string      // Max 100 chars
+  last_action: string       // Max 200 chars
+}
+```
+
+**Configuration:**
+```typescript
+session_recap_enabled: boolean           // Default: false (experimental)
+session_recap: string | null
+session_recap_model: 'haiku' | ...
+```
+
+#### Context Summary
+**Trigger:** Toolbar → Save Context
+
+**What it does:**
+1. Summarizes entire conversation
+2. Extracts key decisions and rationale
+3. Documents trade-offs considered
+4. Lists problems solved
+5. Notes current state and next steps
+6. Saves as markdown file
+
+**Output format:**
+```markdown
+# Summary
+
+## Main Goal
+[Primary objective]
+
+## Key Decisions & Rationale
+[Important decisions and WHY]
+
+## Trade-offs Considered
+[Approaches weighed and rejected]
+
+## Problems Solved
+[Errors, blockers, and resolutions]
+
+## Current State
+[What's implemented]
+
+## Unresolved Questions
+[Open questions or blockers]
+
+## Key Files & Patterns
+[Critical paths and patterns]
+
+## Next Steps
+[Remaining work]
+```
+
+**Configuration:**
+```typescript
+context_summary: string | null
+context_summary_model: 'opus' | ...  // Default: opus
+```
+
+### System Prompts
+
+#### Global System Prompt
+**Application:** Appended to every chat session
+
+**Default content:**
+- Plan mode guidelines
+- Subagent strategy
+- Self-improvement loop (.ai/lessons.md)
+- Verification requirements
+- Code elegance standards
+- Autonomous bug fixing
+
+**Configuration:**
+```typescript
+global_system_prompt: string | null
+```
+
+#### Parallel Execution
+**Application:** Encourages parallel sub-agent usage
+
+**What it does:**
+- Suggests structuring plans for parallelism
+- Recommends launching Task agents in single message
+- Groups independent work items
+
+**Configuration:**
+```typescript
+parallel_execution_prompt_enabled: boolean
+parallel_execution: string | null
+```
+
+## How to Use
+
+### Customizing Prompts
+
+**Access magic prompts:**
+1. Settings (Cmd/Ctrl + ,)
+2. AI section
+3. Magic Prompts tab
+4. Select prompt to customize
+
+**Editing:**
+1. Click "Edit" next to prompt
+2. Modify template in text editor
+3. Use placeholders: `{variable}`
+4. Save changes
+5. Set to `null` to use app default
+
+**Template variables:**
+- `{issueRefs}`, `{prRefs}`: Reference numbers
+- `{workflowName}`, `{branch}`: Context info
+- `{commits}`, `{diff}`: Git data
+- `{message}`: User input
+
+### Configuring Models
+
+**Per-prompt model selection:**
+1. Settings → AI → Magic Prompts
+2. Find prompt in list
+3. Click model dropdown
+4. Choose from available models
+5. Presets: Claude, Codex, OpenCode
+
+**Model defaults:**
+```typescript
+// Heavy tasks use top model
+investigate_issue_model: 'opus'
+investigate_pr_model: 'opus'
+code_review_model: 'haiku'
+
+// Light tasks use fast model
+commit_message_model: 'haiku'
+pr_content_model: 'haiku'
+release_notes_model: 'haiku'
+session_naming_model: 'haiku'
+```
+
+### Backend & Provider Overrides
+
+**Per-prompt backend:**
+1. Settings → AI → Magic Prompts
+2. Advanced options
+3. Select backend for each prompt
+4. `null` = use session backend
+
+**Per-prompt provider:**
+1. Same location as backend
+2. Choose provider profile
+3. `null` = use session provider
+
+**Use cases:**
+- Route expensive operations to specific backend
+- Use regional models for certain tasks
+- Cost optimization
+- Performance tuning
+
+### Using Magic Commands
+
+**Issue investigation:**
+1. Open project
+2. Click GitHub icon in sidebar
+3. Browse issues
+4. Click "Investigate" button
+5. Worktree creates and AI starts analysis
+
+**PR investigation:**
+1. Find PR in GitHub panel
+2. Click "Investigate"
+3. Worktree checks out PR branch
+4. AI analyzes changes and reviews
+
+**Commit creation:**
+1. Stage changes with git
+2. Click Commit button in toolbar
+3. AI generates message
+4. Review and confirm
+5. Optionally push
+
+**Code review:**
+1. Complete feature work
+2. Click Review button
+3. AI analyzes all changes
+4. Findings shown in panel
+5. Fix issues and re-review
+
+## Configuration Options
+
+### Magic Prompt Settings
+
+All prompts stored in `AppPreferences.magic_prompts`:
+
+```typescript
+interface MagicPrompts {
+  investigate_issue: string | null
+  investigate_pr: string | null
+  investigate_workflow_run: string | null
+  investigate_security_alert: string | null
+  investigate_advisory: string | null
+  investigate_linear_issue: string | null
+  pr_content: string | null
+  commit_message: string | null
+  code_review: string | null
+  resolve_conflicts: string | null
+  release_notes: string | null
+  session_naming: string | null
+  session_recap: string | null
+  context_summary: string | null
+  global_system_prompt: string | null
+  parallel_execution: string | null
+}
+```
+
+### Model Overrides
+
+```typescript
+interface MagicPromptModels {
+  investigate_issue_model: MagicPromptModel
+  investigate_pr_model: MagicPromptModel
+  investigate_workflow_run_model: MagicPromptModel
+  pr_content_model: MagicPromptModel
+  commit_message_model: MagicPromptModel
+  code_review_model: MagicPromptModel
+  context_summary_model: MagicPromptModel
+  resolve_conflicts_model: MagicPromptModel
+  release_notes_model: MagicPromptModel
+  session_naming_model: MagicPromptModel
+  session_recap_model: MagicPromptModel
+  investigate_security_alert_model: MagicPromptModel
+  investigate_advisory_model: MagicPromptModel
+  investigate_linear_issue_model: MagicPromptModel
+}
+```
+
+### Backend Overrides
+
+```typescript
+interface MagicPromptBackends {
+  investigate_issue_backend: string | null
+  // ... one per prompt
+  // null = use session backend
+}
+```
+
+### Provider Overrides
+
+```typescript
+interface MagicPromptProviders {
+  investigate_issue_provider: string | null
+  // ... one per prompt
+  // null = use session provider
+}
+```
+
+## Best Practices
+
+### Prompt Design
+
+**Structure prompts clearly:**
+```markdown
+<task>
+Clear one-sentence goal
+</task>
+
+<instructions>
+1. Step-by-step process
+2. What to analyze
+3. What to output
+</instructions>
+
+<guidelines>
+- Key principles
+- Edge cases to consider
+</guidelines>
+```
+
+**Use placeholders:**
+- `{variable}`: Required data
+- Document what each placeholder contains
+- Test with sample data
+
+**Keep prompts focused:**
+- One clear objective
+- Specific output format
+- Actionable instructions
+
+### Model Selection
+
+**By task complexity:**
+```
+Simple generation (commits, names) → Haiku
+Analysis (review, summaries) → Sonnet
+Investigation (issues, security) → Opus
+```
+
+**Cost vs. quality:**
+- Haiku: Fast and cheap, good enough for most
+- Sonnet: Balanced, best default
+- Opus: Expensive, use for critical tasks
+
+### Security Best Practices
+
+**For PR investigation:**
+- Always enable security checks
+- Review AI findings carefully
+- Don't auto-merge based on AI approval
+- Use as one input in review process
+
+**For security alerts:**
+- Verify AI's impact assessment
+- Check if vulnerability actually applies
+- Test patches before deploying
+- Document remediation decisions
+
+### Performance Optimization
+
+**Choose appropriate models:**
+- Don't use Opus for commit messages
+- Haiku is often sufficient
+- Measure response times
+- Adjust based on results
+
+**Backend selection:**
+- Use fastest backend for frequent operations
+- Route expensive tasks to powerful models
+- Balance cost and performance
+
+### Workflow Integration
+
+**Issue-driven development:**
+```
+1. Investigate issue (Opus + Ultrathink)
+2. Implement fix (Sonnet + Think)
+3. Commit (Haiku)
+4. Review (Sonnet)
+5. Open PR (Haiku)
+```
+
+**PR review workflow:**
+```
+1. Investigate PR (Opus)
+2. Check security findings
+3. Run code review (Sonnet)
+4. Address findings
+5. Re-review until approved
+```
+
+### Custom Prompt Examples
+
+**Commit message with conventional commits:**
+```markdown
+<task>Generate a conventional commit message</task>
+
+<format>
+<type>(<scope>): <description>
+
+Types: feat, fix, docs, style, refactor, test, chore
+Scope: component or file area
+Description: imperative mood, lowercase, no period
+</format>
+
+<git_status>
+{status}
+</git_status>
+```
+
+**PR content with jira links:**
+```markdown
+<task>Generate PR title and body with JIRA links</task>
+
+<format>
+Title: [JIRA-123] Brief description
+
+Body:
+## Changes
+- List of changes
+
+## Testing
+- How tested
+
+## JIRA
+- Link: https://jira.company.com/browse/JIRA-123
+</format>
+```
+
+**Code review with custom standards:**
+```markdown
+<task>Review code against company standards</task>
+
+<standards>
+1. All functions must have JSDoc comments
+2. No console.log in production code
+3. Use lodash for array operations
+4. Maximum file size: 300 lines
+5. Test coverage: minimum 80%
+</standards>
+```

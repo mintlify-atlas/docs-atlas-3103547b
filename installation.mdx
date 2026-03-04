@@ -1,0 +1,395 @@
+---
+title: Installation
+description: Install Jean on macOS, Windows, or Linux and set up your development environment
+---
+
+# Installation
+
+Jean is available for macOS, Windows, and Linux. Choose your preferred installation method below.
+
+## Quick Install
+
+<Tabs>
+  <Tab title="macOS (Homebrew)">
+    The easiest way to install Jean on macOS:
+
+    ```bash
+    brew tap coollabsio/jean
+    brew install --cask jean
+    ```
+
+    <Tip>
+    Homebrew will automatically manage updates. Run `brew upgrade jean` to update to the latest version.
+    </Tip>
+  </Tab>
+
+  <Tab title="GitHub Releases">
+    Download the latest release for your platform:
+
+    1. Visit the [GitHub Releases](https://github.com/coollabsio/jean/releases) page
+    2. Download the appropriate installer:
+       - **macOS**: `Jean_<version>_universal.dmg`
+       - **Windows**: `Jean_<version>_x64_en-US.msi`
+       - **Linux**: `jean_<version>_amd64.deb` or `jean-<version>.x86_64.rpm`
+    3. Install the application following your platform's standard installation process
+
+    <Note>
+    You can also visit [jean.build](https://jean.build) for direct download links.
+    </Note>
+  </Tab>
+</Tabs>
+
+## Prerequisites
+
+Jean requires at least **one** of the following AI CLI tools to be installed:
+
+<AccordionGroup>
+  <Accordion title="Claude CLI (Recommended)" icon="message-bot">
+    Install Claude CLI from Anthropic:
+
+    ```bash
+    # Install Claude CLI following Anthropic's official instructions
+    # Visit the Claude CLI GitHub repository for the latest installation method
+    ```
+
+    **Configuration:**
+    - Requires an Anthropic API key
+    - Configure with `claude config`
+    - Supports MCP servers for extended capabilities
+
+    Learn more in the official Claude CLI documentation
+  </Accordion>
+
+  <Accordion title="Codex CLI" icon="code">
+    Install Codex CLI for DeepSeek-powered coding:
+
+    ```bash
+    # Installation instructions
+    # Visit Codex CLI repository for latest instructions
+    ```
+
+    **Features:**
+    - DeepSeek-V3 model support
+    - Reasoning effort levels
+    - Multi-agent collaboration (experimental)
+
+    <Warning>
+    Codex CLI support is newer. Some features may have limited functionality.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="OpenCode" icon="terminal">
+    Install OpenCode for multi-model support:
+
+    ```bash
+    # Installation instructions
+    # Visit OpenCode repository for latest instructions
+    ```
+
+    **Features:**
+    - Multiple AI provider support (OpenRouter, etc.)
+    - Custom provider profiles
+    - Compatible with Claude CLI MCP servers
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+You can install multiple CLI tools and switch between them per-project or per-session.
+</Tip>
+
+## Platform-Specific Requirements
+
+<Tabs>
+  <Tab title="macOS">
+    ### System Requirements
+
+    - macOS 10.15 (Catalina) or later
+    - Universal binary supports both Intel and Apple Silicon
+
+    ### Additional Setup
+
+    **Xcode Command Line Tools** (for git and development tools):
+
+    ```bash
+    xcode-select --install
+    ```
+
+    **GitHub CLI** (optional, for enhanced GitHub integration):
+
+    ```bash
+    brew install gh
+    gh auth login
+    ```
+
+    <Note>
+    Jean can auto-install GitHub CLI if not present, but manual installation is recommended for better control.
+    </Note>
+  </Tab>
+
+  <Tab title="Windows">
+    ### System Requirements
+
+    - Windows 10 or Windows 11
+    - x64 architecture
+
+    ### Additional Setup
+
+    **Git for Windows** (required):
+
+    1. Download from [git-scm.com](https://git-scm.com/download/win)
+    2. Install with recommended settings
+    3. Configure your identity:
+
+    ```bash
+    git config --global user.name "Your Name"
+    git config --global user.email "your.email@example.com"
+    ```
+
+    **GitHub CLI** (optional):
+
+    ```powershell
+    winget install --id GitHub.cli
+    gh auth login
+    ```
+
+    <Warning>
+    Windows support is not fully tested. Please report any issues on [GitHub](https://github.com/coollabsio/jean/issues).
+    </Warning>
+  </Tab>
+
+  <Tab title="Linux">
+    ### System Requirements
+
+    - Modern Linux distribution (Ubuntu 20.04+, Debian 11+, Fedora 35+)
+    - x86_64 architecture
+
+    ### Dependencies
+
+    **Debian/Ubuntu/Linux Mint:**
+
+    ```bash
+    sudo apt update
+    sudo apt install libwebkit2gtk-4.1-dev librsvg2-dev patchelf
+
+    # Ubuntu/Linux Mint: Use Ayatana AppIndicator
+    sudo apt install libayatana-appindicator3-dev
+
+    # Debian/older distros:
+    # sudo apt install libappindicator3-dev
+    ```
+
+    **Fedora/RHEL:**
+
+    ```bash
+    sudo dnf install webkit2gtk4.1-devel librsvg2-devel patchelf
+    ```
+
+    **GitHub CLI:**
+
+    ```bash
+    # Debian/Ubuntu
+    sudo apt install gh
+
+    # Fedora
+    sudo dnf install gh
+
+    # Then authenticate
+    gh auth login
+    ```
+
+    <Warning>
+    Linux is not officially tested. Community contributions and bug reports are welcome.
+    </Warning>
+  </Tab>
+</Tabs>
+
+## Git Configuration
+
+Jean requires git to be configured with your identity:
+
+```bash
+# Check current configuration
+git config --global user.name
+git config --global user.email
+
+# Set if not configured
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+```
+
+<Note>
+Jean will prompt you to configure git identity on first launch if not already set.
+</Note>
+
+## Building from Source
+
+For developers who want to build Jean from source:
+
+<Steps>
+  <Step title="Install Prerequisites">
+    **Required:**
+    - [Node.js](https://nodejs.org/) v20 or later
+    - [Bun](https://bun.sh) (recommended) or npm
+    - [Rust](https://rustup.rs) stable toolchain
+
+    **Platform-specific:**
+    - **Windows**: Visual Studio with "Desktop development with C++" workload
+    - **Linux**: See platform-specific dependencies above
+  </Step>
+
+  <Step title="Clone Repository">
+    ```bash
+    git clone https://github.com/coollabsio/jean.git
+    cd jean
+    ```
+  </Step>
+
+  <Step title="Install Dependencies">
+    ```bash
+    bun install
+    ```
+  </Step>
+
+  <Step title="Run Development Build">
+    ```bash
+    bun run tauri:dev
+    ```
+  </Step>
+
+  <Step title="Build Production Package">
+    ```bash
+    # Build for your platform
+    bun run tauri:build
+
+    # Platform-specific builds
+    bun run tauri:build:macos    # Universal macOS build
+    bun run tauri:build:windows  # Windows MSI/NSIS
+    bun run tauri:build:linux    # Linux DEB/RPM
+    ```
+
+    Built artifacts will be in `src-tauri/target/release/bundle/`
+  </Step>
+</Steps>
+
+<Accordion title="Development Setup Details">
+  For full development setup including testing, linting, and code quality checks, see:
+
+  - [CONTRIBUTING.md](https://github.com/coollabsio/jean/blob/main/CONTRIBUTING.md)
+  - [docs/developer/architecture-guide.md](https://github.com/coollabsio/jean/tree/main/docs/developer)
+
+  **Key commands:**
+  ```bash
+  bun run check:all    # Run all quality checks
+  bun run test         # Run tests in watch mode
+  bun run lint:fix     # Fix linting issues
+  bun run format       # Format code with Prettier
+  ```
+</Accordion>
+
+## Verification
+
+After installation, verify Jean is working:
+
+<Steps>
+  <Step title="Launch Jean">
+    Open Jean from your Applications folder (macOS/Linux) or Start Menu (Windows)
+  </Step>
+
+  <Step title="Check CLI Detection">
+    Jean will automatically detect installed CLI tools (Claude CLI, Codex CLI, OpenCode)
+
+    If not detected, check:
+    - CLI is installed and in your PATH
+    - CLI is configured with API credentials
+    - Terminal has been restarted after CLI installation
+  </Step>
+
+  <Step title="Verify Git Configuration">
+    Jean will check for git identity. If not configured, you'll see a setup prompt.
+  </Step>
+
+  <Step title="Add Your First Project">
+    Click **Add Project** and select a git repository to get started
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="CLI Not Detected" icon="circle-exclamation">
+    If Jean doesn't detect your CLI installation:
+
+    1. Verify CLI is installed:
+       ```bash
+       claude --version   # or codex --version, opencode --version
+       ```
+
+    2. Ensure CLI is in PATH:
+       ```bash
+       which claude       # macOS/Linux
+       where claude       # Windows
+       ```
+
+    3. Restart Jean after installing CLI tools
+
+    4. Check CLI configuration:
+       ```bash
+       claude config      # Claude CLI
+       ```
+  </Accordion>
+
+  <Accordion title="Git Identity Not Set" icon="user">
+    If you see git identity errors:
+
+    ```bash
+    git config --global user.name "Your Name"
+    git config --global user.email "your.email@example.com"
+    ```
+
+    Restart Jean after configuration.
+  </Accordion>
+
+  <Accordion title="macOS Gatekeeper Warning" icon="shield">
+    If macOS blocks Jean from opening:
+
+    1. Go to **System Settings > Privacy & Security**
+    2. Find the message about Jean being blocked
+    3. Click **Open Anyway**
+
+    Or use Terminal:
+    ```bash
+    xattr -cr /Applications/Jean.app
+    ```
+  </Accordion>
+
+  <Accordion title="Windows SmartScreen" icon="windows">
+    If Windows SmartScreen blocks installation:
+
+    1. Click **More info**
+    2. Click **Run anyway**
+
+    This is expected for new applications.
+  </Accordion>
+
+  <Accordion title="Linux AppImage Issues" icon="linux">
+    If AppImage doesn't run:
+
+    ```bash
+    chmod +x Jean-*.AppImage
+    ./Jean-*.AppImage
+    ```
+
+    Or install FUSE:
+    ```bash
+    sudo apt install libfuse2  # Ubuntu/Debian
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+Now that Jean is installed, continue to the quickstart guide:
+
+<Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+  Learn how to add your first project and create a worktree
+</Card>

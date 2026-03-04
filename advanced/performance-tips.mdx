@@ -1,0 +1,419 @@
+---
+title: 'Performance Tips'
+description: 'Optimize Jean for speed and resource efficiency'
+---
+
+## Overview
+
+Jean is designed for performance, but you can optimize further based on your workflow. This guide covers polling intervals, resource management, and performance best practices.
+
+## Polling Intervals
+
+Jean polls git status and remote APIs at configurable intervals.
+
+### Git Polling
+
+**What it does**: Checks local git status (staged/unstaged changes, branch sync)
+
+**Default**: 60 seconds
+
+**Range**: 10-600 seconds
+
+**Configure**:
+1. Preferences > Performance
+2. **Git Poll Interval** slider
+3. Move to desired interval
+
+**Recommendations**:
+- **Fast**: 10-30s (active development, frequent commits)
+- **Balanced**: 60s (default, most users)
+- **Slow**: 120-300s (large repos, battery saving)
+- **Manual**: 600s (poll manually via refresh button)
+
+**Impact**:
+- Lower = more responsive git status
+- Higher = less CPU/disk usage
+
+### Remote Polling
+
+**What it does**: Fetches PR status, CI checks, GitHub issues from remote APIs
+
+**Default**: 60 seconds
+
+**Range**: 30-600 seconds
+
+**Configure**:
+1. Preferences > Performance
+2. **Remote Poll Interval** slider
+3. Move to desired interval
+
+**Recommendations**:
+- **Fast**: 30s (active PR reviews, CI monitoring)
+- **Balanced**: 60s (default)
+- **Slow**: 120-300s (API rate limiting, battery saving)
+- **Manual**: 600s (refresh manually when needed)
+
+**Impact**:
+- Lower = more current remote status
+- Higher = less network usage, fewer API calls
+
+**API limits**: GitHub rate limits are ~5000 requests/hour (authenticated). Fast polling consumes more quota.
+
+## Resource Management
+
+### Memory Optimization
+
+**Session cleanup**:
+- Archive old sessions to reduce memory footprint
+- Jean stores sessions in memory while active
+- Archived sessions are persisted to disk
+
+**Archive retention**:
+1. Preferences > General
+2. **Archive Retention** dropdown
+3. Select: Never, 7d, 14d, 30d, 60d, 90d
+
+**Effect**:
+- Automatically deletes archived worktrees/sessions after N days
+- Frees disk space and reduces database queries
+- 0 (Never) = keep all archives indefinitely
+
+**Terminal instances**:
+- Detached terminals are kept in memory
+- Jean limits detached terminals to 20 (configurable)
+- Close unused terminals to free memory
+
+### CPU Optimization
+
+**Reduce polling frequency**:
+- Increase git/remote poll intervals (see above)
+- Disable auto-refresh for inactive projects
+
+**Disable session recap** (experimental feature):
+1. Preferences > Experimental
+2. Uncheck **Session Recap Enabled**
+3. Skips AI digest generation when returning to sessions
+
+**Disable parallel execution prompt** (experimental):
+1. Preferences > Experimental  
+2. Uncheck **Parallel Execution Prompt**
+3. Reduces system prompt overhead
+
+### Disk Usage
+
+**Worktree location**:
+- Default: `~/jean/`
+- Each worktree is a full git clone
+- Large repos = significant disk usage
+
+**Custom base directory** (per-project):
+1. Right-click project > **Project Settings**
+2. **General** > **Worktrees Location**
+3. Choose external drive or larger partition
+
+**Session storage**:
+- Location: `~/Library/Application Support/io.coollabs.jean/sessions/`
+- Each session stores full message history
+- Archive old sessions to reduce storage
+
+**Clean up archived items**:
+1. View archived worktrees/sessions
+2. Permanently delete instead of archiving
+3. Or reduce archive retention days
+
+## UI Performance
+
+### Font Rendering
+
+**UI font size**: Larger fonts = more rendering overhead
+- Default: 16px
+- Range: 12-24px
+
+**Chat font size**: Code rendering is expensive
+- Default: 16px
+- Smaller = faster rendering for code blocks
+
+**Configure**:
+1. Preferences > Appearance
+2. Adjust **UI Font Size** and **Chat Font Size** sliders
+
+### Zoom Level
+
+**Global zoom**:
+- Default: 90%
+- Range: 50-200%
+- Higher zoom = more pixels rendered
+
+**Configure**:
+1. Preferences > Appearance
+2. **Zoom Level** slider
+
+### Canvas Views
+
+**Grid vs List**:
+- **Grid**: More visual, slower for many sessions
+- **List**: Compact, faster rendering
+
+**Configure**:
+1. Preferences > Appearance
+2. **Canvas Layout**: Grid or List
+
+**Impact**:
+- List view renders faster with 50+ sessions
+- Grid view better for visual scanning
+
+### Syntax Highlighting
+
+**Themes**: Some themes are more complex (more CSS rules)
+
+**Lighter themes** (faster):
+- `github-light`
+- `one-light`
+
+**Heavier themes** (slower):
+- `catppuccin-mocha` (many color rules)
+- `tokyo-night` (complex gradients)
+
+**Configure**:
+1. Preferences > Appearance  
+2. **Syntax Theme (Dark)** / **Syntax Theme (Light)**
+
+## Network Optimization
+
+### Reduce API Calls
+
+**Increase remote poll interval** (see above)
+
+**Disable unused integrations**:
+- If not using Linear: Don't set Linear API key
+- If not using GitHub: Don't authenticate gh CLI
+
+**Cache aggressiveness**:
+- Jean caches git status, PR data, CI checks
+- Cache TTL: 5 minutes (not configurable)
+- Manual refresh available in UI
+
+### MCP Server Overhead
+
+**Disable unused MCP servers**:
+1. Preferences > MCP Servers
+2. Disable servers you don't use
+3. Each enabled server adds startup overhead
+
+**Per-session MCP**:
+- Only enable servers needed for current task
+- Toolbar > MCP icon > Toggle servers
+
+## Backend Performance
+
+### Model Selection
+
+**Fast models**:
+- Claude: `haiku` (fastest)
+- Codex: `gpt-5.1-codex-mini` (lightweight)
+- OpenCode: Use smaller models
+
+**Heavy models**:
+- Claude: `opus` (slowest, most capable)
+- Codex: `gpt-5.3-codex` (largest context)
+
+**Use fast models for**:
+- Commit messages (`commit_message_model: 'haiku'`)
+- PR content (`pr_content_model: 'haiku'`)
+- Session naming (`session_naming_model: 'haiku'`)
+
+**Use heavy models for**:
+- Issue investigation (`investigate_issue_model: 'opus'`)
+- Code review (`code_review_model: 'opus'`)
+- Context summarization (`context_summary_model: 'opus'`)
+
+### Thinking Levels (Claude)
+
+**Thinking overhead**:
+- `off` - No thinking (fastest)
+- `think` - 4K tokens thinking
+- `megathink` - 10K tokens thinking
+- `ultrathink` - 32K tokens thinking (slowest)
+
+**Recommendation**:
+- Use `think` or `off` for simple tasks
+- Use `ultrathink` only for complex reasoning
+
+**Configure**:
+1. Preferences > General
+2. **Thinking Level** dropdown
+
+### Reasoning Effort (Codex)
+
+**Effort levels**:
+- `low` - Minimal reasoning (fastest)
+- `medium` - Moderate reasoning
+- `high` - Deep reasoning
+- `xhigh` - Extra high (slowest)
+
+**Configure**:
+1. Preferences > Codex
+2. **Default Reasoning Effort** dropdown
+
+## Startup Performance
+
+### Auto-start HTTP Server
+
+**Impact**: HTTP server adds ~1s to startup time
+
+**Disable if not using remote access**:
+1. Preferences > Remote Access
+2. Uncheck **Auto-start on Launch**
+
+### Feature Tour
+
+**First-run wizard**: Adds ~2s to first startup
+
+**Skip**:
+1. Complete tour once
+2. Or manually dismiss
+3. Preference: `has_seen_feature_tour: true`
+
+### MCP Health Checks
+
+**Disabled by default** (manual trigger)
+
+If auto-enabled:
+- Each MCP server adds ~0.5s to startup
+- Disable unnecessary servers
+
+## Session Performance
+
+### Message History
+
+**Long sessions** (500+ messages):
+- Rendering slows down
+- Scrolling becomes laggy
+
+**Solutions**:
+- Archive old sessions, start fresh
+- Use context summarization to condense history
+- Clear context and continue (loses history)
+
+### File Mentions
+
+**Large files** (>10K lines):
+- Slow to render in chat
+- Large context size
+
+**Solutions**:
+- Mention specific line ranges instead of whole file
+- Use search/grep instead of loading full file
+
+### Image Processing
+
+**Images are compressed on paste/drop**:
+- Max: 1568px (Claude's limit)
+- Opaque PNGs → JPEG at 85% quality
+- Smaller images processed faster
+
+**Token cost**: `(width × height) / 750` tokens per image
+
+**Reduce cost**:
+- Resize images before pasting
+- Use smaller screenshots
+- Compress manually before adding
+
+## Platform-Specific Tips
+
+### macOS
+
+**Disable animations**:
+- System Preferences > Accessibility > Display > Reduce Motion
+- Speeds up window transitions
+
+**Close unused apps**: Jean shares GPU with other apps
+
+### Windows
+
+**Disable transparency** (Windows 11):
+- Settings > Personalization > Colors > Transparency Effects
+- Reduces GPU load
+
+**Run as administrator** (if file access issues):
+- Right-click Jean > Run as Administrator
+- Improves git command performance
+
+### Linux
+
+**X11 vs Wayland**: X11 generally faster for Jean (Tauri limitation)
+
+**Compositor**: Disable compositing for better performance
+- KDE: `Alt+Shift+F12`
+- GNOME: Install extension to disable animations
+
+## Monitoring Performance
+
+### Built-in Tools
+
+**Debug mode**:
+1. Preferences > Advanced
+2. Enable **Debug Mode**
+3. View performance metrics in debug panel
+
+**Logs**:
+- Help > Open Logs Folder
+- Check for performance warnings
+
+### External Tools
+
+**CPU/Memory monitoring**:
+- macOS: Activity Monitor
+- Windows: Task Manager
+- Linux: `top`, `htop`, System Monitor
+
+**Network monitoring**:
+- macOS: Network Utility
+- Windows: Resource Monitor
+- Linux: `iftop`, `nethogs`
+
+## Extreme Optimization
+
+For low-end hardware or maximum performance:
+
+1. **Minimal polling**:
+   - Git: 300s
+   - Remote: 600s
+
+2. **Lightweight models**:
+   - Default: Haiku
+   - Magic prompts: All Haiku
+
+3. **Disable features**:
+   - Session recap: Off
+   - Parallel execution: Off
+   - Auto-naming: Off
+
+4. **UI simplification**:
+   - Canvas: List view
+   - Font size: 14px
+   - Zoom: 90%
+   - Syntax theme: github-light
+
+5. **Reduce storage**:
+   - Archive retention: 7 days
+   - Delete old worktrees immediately
+   - Clear message history regularly
+
+6. **Network**:
+   - Disable GitHub integration (no gh CLI)
+   - Disable Linear integration
+   - No MCP servers
+
+## Benchmarking
+
+**Typical performance** (M2 MacBook Pro, 16GB RAM):
+
+- Startup: ~1.5s cold, ~0.5s warm
+- Session creation: ~0.1s
+- Message send: ~0.05s (network-bound for response)
+- Git status update: ~0.2s (large repo ~1s)
+- PR status fetch: ~0.5s per PR
+- Canvas render: ~0.05s (50 sessions)
+
+**Your numbers**: Run benchmarks with debug mode enabled.

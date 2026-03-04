@@ -1,0 +1,382 @@
+---
+title: Chat API
+description: API endpoints for sending messages and receiving AI responses
+---
+
+The Chat API enables you to send messages to AI assistants and receive responses through HTTP requests or WebSocket connections.
+
+## Send Message
+
+Send a message to an AI assistant in a chat session.
+
+<ParamField path="sessionId" type="string" required>
+  The unique identifier of the session
+</ParamField>
+
+<ParamField body="message" type="string" required>
+  The message text to send to the AI
+</ParamField>
+
+<ParamField body="files" type="array">
+  Optional array of file paths to include as context
+</ParamField>
+
+<ParamField body="images" type="array">
+  Optional array of image file paths to include
+</ParamField>
+
+### Response
+
+<ResponseField name="message_id" type="string">
+  Unique identifier for the sent message
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Message status: `sent`, `processing`, or `completed`
+</ResponseField>
+
+### Example Request
+
+```bash cURL
+curl -X POST "http://localhost:3456/api/sessions/{sessionId}/messages" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Implement a new user authentication feature",
+    "files": ["src/auth.ts", "src/types/user.ts"]
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "message_id": "msg_abc123",
+  "status": "processing"
+}
+```
+
+## Stream Messages (WebSocket)
+
+For real-time chat interactions, use the WebSocket connection to stream messages and responses.
+
+### Connect to WebSocket
+
+```javascript
+const ws = new WebSocket('ws://localhost:3456/ws?token=YOUR_TOKEN');
+
+ws.onopen = () => {
+  console.log('Connected to Jean WebSocket');
+};
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log('Received:', data);
+};
+```
+
+### Send Message via WebSocket
+
+```javascript
+ws.send(JSON.stringify({
+  type: 'send_message',
+  session_id: 'session_uuid',
+  message: 'Add error handling to the login function',
+  files: ['src/auth/login.ts']
+}));
+```
+
+### Receive Streaming Response
+
+As the AI generates a response, you'll receive multiple events:
+
+#### Message Started
+
+```json
+{
+  "event": "message-started",
+  "data": {
+    "message_id": "msg_abc123",
+    "session_id": "session_uuid"
+  }
+}
+```
+
+#### Content Delta
+
+Streaming chunks of the AI's response:
+
+```json
+{
+  "event": "content-delta",
+  "data": {
+    "message_id": "msg_abc123",
+    "content": "I'll add comprehensive error handling...",
+    "content_index": 0
+  }
+}
+```
+
+#### Tool Use
+
+When the AI uses a tool (e.g., editing a file):
+
+```json
+{
+  "event": "tool-use",
+  "data": {
+    "message_id": "msg_abc123",
+    "tool_name": "edit_file",
+    "tool_input": {
+      "file_path": "src/auth/login.ts",
+      "old_content": "...",
+      "new_content": "..."
+    }
+  }
+}
+```
+
+#### Message Completed
+
+```json
+{
+  "event": "message-completed",
+  "data": {
+    "message_id": "msg_abc123",
+    "session_id": "session_uuid",
+    "stop_reason": "end_turn",
+    "usage": {
+      "input_tokens": 1250,
+      "output_tokens": 856,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 800
+    }
+  }
+}
+```
+
+#### Message Error
+
+```json
+{
+  "event": "message-error",
+  "data": {
+    "message_id": "msg_abc123",
+    "error": "Rate limit exceeded",
+    "error_type": "rate_limit_error"
+  }
+}
+```
+
+## Get Message History
+
+Retrieve all messages in a session.
+
+<ParamField path="sessionId" type="string" required>
+  The unique identifier of the session
+</ParamField>
+
+<ParamField query="limit" type="number">
+  Maximum number of messages to return (default: 100)
+</ParamField>
+
+<ParamField query="offset" type="number">
+  Number of messages to skip (for pagination)
+</ParamField>
+
+### Response
+
+<ResponseField name="messages" type="array">
+  Array of message objects
+  
+  <Expandable title="Message Object">
+    <ResponseField name="id" type="string">
+      Unique message identifier
+    </ResponseField>
+    <ResponseField name="role" type="string">
+      Message role: `user` or `assistant`
+    </ResponseField>
+    <ResponseField name="content" type="array">
+      Array of content blocks (text, tool use, tool result)
+    </ResponseField>
+    <ResponseField name="timestamp" type="number">
+      Unix timestamp when message was created
+    </ResponseField>
+    <ResponseField name="usage" type="object">
+      Token usage statistics
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Request
+
+```bash cURL
+curl -X GET "http://localhost:3456/api/sessions/{sessionId}/messages?limit=50" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+## Stop Generation
+
+Stop the AI from generating a response mid-stream.
+
+<ParamField path="sessionId" type="string" required>
+  The unique identifier of the session
+</ParamField>
+
+### Example Request
+
+```bash cURL
+curl -X POST "http://localhost:3456/api/sessions/{sessionId}/stop" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+## Approve Plan
+
+When a session is in plan mode and has proposed changes, approve the plan to execute it.
+
+<ParamField path="sessionId" type="string" required>
+  The unique identifier of the session
+</ParamField>
+
+<ParamField body="mode" type="string" required>
+  Execution mode for approved plan: `build` or `yolo`
+</ParamField>
+
+### Example Request
+
+```bash cURL
+curl -X POST "http://localhost:3456/api/sessions/{sessionId}/approve" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "mode": "build"
+  }'
+```
+
+## Answer Question
+
+When the AI asks a question (waiting state), provide an answer.
+
+<ParamField path="sessionId" type="string" required>
+  The unique identifier of the session
+</ParamField>
+
+<ParamField body="answer" type="string" required>
+  The answer to the AI's question
+</ParamField>
+
+### Example Request
+
+```bash cURL
+curl -X POST "http://localhost:3456/api/sessions/{sessionId}/answer" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "answer": "Yes, please implement the retry logic with exponential backoff"
+  }'
+```
+
+## WebSocket Connection
+
+The WebSocket connection provides bidirectional real-time communication.
+
+### Authentication
+
+Include your token as a query parameter:
+
+```
+ws://localhost:3456/ws?token=YOUR_TOKEN
+```
+
+### Dual Emission
+
+Jean uses a **dual emission** pattern for WebSocket events:
+
+1. **Global broadcast**: All events are sent to all connected clients
+2. **Targeted emission**: Events related to a specific session are also sent to clients that have subscribed to that session
+
+This allows you to:
+- Listen to all activity across Jean (for dashboard views)
+- Subscribe to specific sessions for focused updates
+
+### Subscribe to Session
+
+```javascript
+ws.send(JSON.stringify({
+  type: 'subscribe',
+  session_id: 'session_uuid'
+}));
+```
+
+### Unsubscribe from Session
+
+```javascript
+ws.send(JSON.stringify({
+  type: 'unsubscribe',
+  session_id: 'session_uuid'
+}));
+```
+
+## Error Responses
+
+The Chat API returns standard HTTP error codes:
+
+| Status Code | Description |
+|------------|-------------|
+| 400 | Bad Request - Invalid message format or parameters |
+| 401 | Unauthorized - Missing or invalid token |
+| 404 | Not Found - Session does not exist |
+| 429 | Rate Limit Exceeded - Too many requests |
+| 500 | Internal Server Error - Server-side error |
+
+### Example Error Response
+
+```json
+{
+  "error": "Session not found",
+  "error_type": "not_found",
+  "session_id": "invalid_uuid"
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use WebSocket for interactive chat">
+    For real-time chat interactions, use the WebSocket connection to receive streaming responses and immediate updates. HTTP requests are better suited for batch operations or simple queries.
+  </Accordion>
+
+  <Accordion title="Handle reconnection">
+    WebSocket connections can drop. Implement reconnection logic with exponential backoff to maintain a stable connection.
+    
+    ```javascript
+    let reconnectDelay = 1000;
+    
+    ws.onclose = () => {
+      setTimeout(() => {
+        reconnect();
+        reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+      }, reconnectDelay);
+    };
+    ```
+  </Accordion>
+
+  <Accordion title="Store message history locally">
+    Cache message history on the client side to reduce API calls and improve response times. Use the WebSocket events to keep the cache synchronized.
+  </Accordion>
+
+  <Accordion title="Implement typing indicators">
+    Show typing indicators when receiving `content-delta` events to provide feedback to users during streaming responses.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Sessions API" icon="layer-group" href="/api/sessions">
+    Manage chat sessions within worktrees
+  </Card>
+  <Card title="Remote Access Guide" icon="globe" href="/features/remote-access">
+    Learn more about Jean's HTTP server and WebSocket API
+  </Card>
+</CardGroup>

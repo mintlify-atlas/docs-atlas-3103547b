@@ -1,0 +1,223 @@
+---
+title: 'API Overview'
+description: 'Jean HTTP/WebSocket API architecture and getting started'
+---
+
+## Introduction
+
+Jean provides a comprehensive HTTP and WebSocket API that allows external clients to interact with the application programmatically. The API supports both traditional HTTP request-response patterns and real-time bidirectional communication via WebSocket.
+
+## Architecture
+
+### Server Components
+
+The HTTP server is built on [Axum](https://github.com/tokio-rs/axum), a modern Rust web framework. Key components include:
+
+- **HTTP Server** (`src-tauri/src/http_server/server.rs`) - Main server implementation
+- **WebSocket Handler** (`src-tauri/src/http_server/websocket.rs`) - Real-time communication
+- **Command Dispatcher** (`src-tauri/src/http_server/dispatch.rs`) - Routes commands to handlers
+- **Authentication** (`src-tauri/src/http_server/auth.rs`) - Token-based security
+
+### Server Lifecycle
+
+The server starts on-demand and can be configured through the application settings:
+
+```rust
+start_server(
+    app: AppHandle,
+    port: u16,
+    token: String,
+    localhost_only: bool,
+    token_required: bool,
+) -> Result<HttpServerHandle, String>
+```
+
+## Base URLs
+
+<ParamField path="localhost" type="string" default="http://127.0.0.1:PORT">
+  Default when `localhost_only = true`
+</ParamField>
+
+<ParamField path="lan" type="string" default="http://LOCAL_IP:PORT">
+  Available when `localhost_only = false`
+</ParamField>
+
+The port is configurable (default: 8420). The actual URL is provided when the server starts.
+
+## API Endpoints
+
+Jean provides the following HTTP endpoints:
+
+### Core Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/ws` | GET | WebSocket upgrade endpoint |
+| `/api/auth` | GET | Token validation endpoint |
+| `/api/init` | GET | Initial data preload endpoint |
+| `/*` | GET | Static file serving (frontend SPA) |
+
+### WebSocket Commands
+
+All application functionality is exposed via WebSocket commands (see [Chat](/api/chat), [Projects](/api/projects), [Worktrees](/api/worktrees), [Sessions](/api/sessions)).
+
+## Communication Patterns
+
+### HTTP REST
+
+Used for:
+- Authentication (`/api/auth`)
+- Initial data loading (`/api/init`)
+- Static file serving
+
+### WebSocket RPC
+
+Used for:
+- All CRUD operations
+- Real-time event streaming
+- Bidirectional communication
+
+## Request Format
+
+### WebSocket Messages
+
+All WebSocket messages use JSON format:
+
+```json
+{
+  "id": "unique-request-id",
+  "command": "command_name",
+  "args": {
+    "param1": "value1",
+    "param2": "value2"
+  }
+}
+```
+
+<ParamField path="id" type="string" required>
+  Unique identifier for correlating requests with responses
+</ParamField>
+
+<ParamField path="command" type="string" required>
+  Name of the command to execute (e.g., `list_projects`, `send_chat_message`)
+</ParamField>
+
+<ParamField path="args" type="object">
+  Command-specific parameters as a JSON object
+</ParamField>
+
+## Response Format
+
+### Success Response
+
+```json
+{
+  "type": "response",
+  "id": "unique-request-id",
+  "data": { /* command result */ }
+}
+```
+
+### Error Response
+
+```json
+{
+  "type": "error",
+  "id": "unique-request-id",
+  "error": "Error message description"
+}
+```
+
+### Event Messages
+
+Server-initiated events (no request):
+
+```json
+{
+  "type": "event",
+  "event": "event_name",
+  "payload": { /* event data */ }
+}
+```
+
+## Real-time Events
+
+The WebSocket connection broadcasts real-time events for:
+
+- Project and worktree changes
+- Session updates
+- Chat message streaming
+- Git status updates
+- Background task completion
+
+Events are broadcast to all connected clients via a channel with 1000-event buffering. Slow clients will miss old events.
+
+## CORS Policy
+
+The server uses a permissive CORS policy:
+
+```rust
+CorsLayer::new()
+    .allow_origin(Any)
+    .allow_methods(Any)
+    .allow_headers(Any)
+```
+
+This allows web clients from any origin to connect.
+
+## Error Handling
+
+All errors are returned as JSON with descriptive messages:
+
+- **400 Bad Request** - Invalid command or parameters
+- **401 Unauthorized** - Invalid or missing token
+- **500 Internal Server Error** - Server-side errors
+
+## Versioning
+
+The API does not currently use explicit versioning. The server maintains backward compatibility for data structures through:
+
+- Optional fields with `#[serde(default)]`
+- Field aliases for renamed fields
+- Migration logic in storage layer
+
+## Rate Limiting
+
+No explicit rate limiting is implemented. The WebSocket connection is persistent and designed for interactive use.
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use WebSocket for interactive clients">
+    The WebSocket API provides real-time updates and eliminates polling overhead. HTTP endpoints are primarily for authentication and initial data loading.
+  </Accordion>
+
+  <Accordion title="Handle reconnection gracefully">
+    If the WebSocket connection drops, reconnect and re-subscribe to events. The server does not maintain client-specific state between connections.
+  </Accordion>
+
+  <Accordion title="Use unique request IDs">
+    Generate UUIDs or timestamps for request IDs to avoid conflicts when multiple requests are in flight.
+  </Accordion>
+
+  <Accordion title="Monitor event lag">
+    If the WebSocket receiver falls behind, the broadcast channel will skip events. Monitor for `RecvError::Lagged` warnings.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="shield-check" href="/api/authentication">
+    Learn about token-based authentication
+  </Card>
+  <Card title="Projects API" icon="folder-tree" href="/api/projects">
+    Manage Git projects and repositories
+  </Card>
+  <Card title="Worktrees API" icon="code-branch" href="/api/worktrees">
+    Create and manage Git worktrees
+  </Card>
+  <Card title="Sessions API" icon="messages" href="/api/sessions">
+    Handle chat sessions
+  </Card>
+</CardGroup>

@@ -1,0 +1,396 @@
+---
+title: Worktree Automation
+description: Creating, managing, archiving, and cleaning up Git worktrees in Jean
+---
+
+## Overview
+
+Jean automates Git worktree management, allowing you to work on multiple branches simultaneously without switching contexts. Each worktree gets its own directory, sessions, and terminal instances.
+
+## Key Capabilities
+
+### Worktree Creation
+
+Jean creates worktrees with a streamlined workflow:
+
+**Automatic Setup:**
+- Generates random workspace names (e.g., "fuzzy-tiger")
+- Creates matching Git branch
+- Sets up directory structure
+- Runs optional setup scripts
+- Creates initial base session
+
+**Creation Sources:**
+1. **Manual Creation** - New branch from base
+2. **From GitHub Issue** - Automatically investigates issue and creates context
+3. **From Pull Request** - Checks out PR branch as worktree
+4. **From Workflow Failure** - Investigates failed CI run
+
+**Path Resolution:**
+```rust
+// From src-tauri/src/projects/storage.rs
+pub fn get_project_worktrees_dir(name: &str, custom_base_dir: Option<&str>) -> PathBuf {
+    match custom_base_dir {
+        Some(dir) => PathBuf::from(dir).join(name),
+        None => dirs::home_dir()
+            .unwrap_or_else(|| PathBuf::from("."))
+            .join("jean")
+            .join(name),
+    }
+}
+```
+
+**Default structure:**
+```
+~/jean/
+  ├─ project-name/
+  │   ├─ fuzzy-tiger/          # Worktree 1
+  │   │   └─ ...               # Git files
+  │   ├─ happy-dolphin/        # Worktree 2
+  │   │   └─ ...
+  │   └─ eager-panda/          # Worktree 3
+  │       └─ ...
+```
+
+### Worktree Types
+
+**Worktree Sessions** - Feature branches:
+```typescript
+interface Worktree {
+  session_type: 'worktree'  // Default type
+  branch: string             // Branch name (matches workspace name)
+  path: string               // Absolute path to worktree directory
+  status: WorktreeStatus     // pending | ready | error | deleting
+}
+```
+
+**Base Sessions** - Main branch work:
+```typescript
+interface Worktree {
+  session_type: 'base'  // Base session in original repo
+  path: string          // Points to original repository
+}
+```
+
+### Background Operations
+
+Worktree creation and deletion happen asynchronously:
+
+**Creation Flow:**
+1. User initiates worktree creation
+2. Pending worktree created with `status: 'pending'`
+3. Background task runs:
+   - Pull base branch (if auto-pull enabled)
+   - Create Git worktree
+   - Run setup script (if configured)
+   - Emit completion event
+4. Status updates to `ready` or `error`
+
+**Event System** (from `src/types/projects.ts`):
+```typescript
+// Worktree creation events
+interface WorktreeCreatingEvent {
+  id: string
+  project_id: string
+  name: string
+  path: string
+  branch: string
+  issue_number?: number
+  pr_number?: number
+}
+
+interface WorktreeCreatedEvent {
+  worktree: Worktree
+}
+
+interface WorktreeCreateErrorEvent {
+  id: string
+  project_id: string  
+  error: string
+}
+```
+
+### Setup Scripts
+
+Automate environment setup when creating worktrees:
+
+**Configuration:**
+- Stored in project settings (`setup_script` field)
+- Runs after Git worktree creation
+- Output captured and stored
+- Success/failure tracked
+
+**Common setup tasks:**
+```bash
+#!/bin/bash
+# Install dependencies
+bun install
+
+# Build project
+bun run build
+
+# Run database migrations
+bun run migrate
+```
+
+**Captured data:**
+```typescript
+interface Worktree {
+  setup_output?: string       // Script stdout/stderr
+  setup_script?: string       // The script that was executed
+  setup_success?: boolean     // undefined = no script
+}
+```
+
+### Archiving & Restoration
+
+Safely archive worktrees without permanent deletion:
+
+**Archive behavior:**
+- Worktree marked with `archived_at` timestamp
+- Hidden from main view, visible in Archive modal
+- Git directory and all files remain intact
+- Sessions and data preserved
+- Can be restored at any time
+
+**Automatic archiving:**
+- When PR is merged (if `auto_archive_on_pr_merged` enabled)
+- Triggered by GitHub webhook or polling detection
+- Configurable in Settings → Worktrees
+
+**Restoration:**
+1. Open Archive modal (Cmd/Ctrl + Shift + A)
+2. Click "Restore" on archived worktree
+3. Worktree returns to active view
+4. All sessions and state preserved
+
+**Permanent deletion:**
+- Archives are cleaned up based on retention policy
+- Default: 7 days (configurable in Settings)
+- Can manually delete from Archive modal
+- Irreversible - removes Git directory and all data
+
+### Path Conflict Resolution
+
+Jean handles scenarios where worktree paths already exist:
+
+**Conflict detection:**
+```typescript
+interface WorktreePathExistsEvent {
+  id: string                  // Pending worktree ID
+  path: string                // Conflicting path
+  suggested_name: string      // Name with incremented suffix
+  archived_worktree_id?: string  // If matches archived worktree
+  archived_worktree_name?: string
+  issue_context?: {...}       // Preserve issue context
+}
+```
+
+**Resolution options:**
+1. **Restore archived worktree** - If path matches archived one
+2. **Use suggested name** - Automatically incremented (e.g., `fuzzy-tiger-2`)
+3. **Cancel** - Abort worktree creation
+
+### Branch Conflict Resolution
+
+Similar handling for existing branch names:
+
+```typescript
+interface WorktreeBranchExistsEvent {
+  branch: string              // Conflicting branch name
+  suggested_name: string      // Alternative name
+  issue_context?: {...}       // Context to preserve
+  pr_context?: {...}          // Context to preserve
+}
+```
+
+## How to Use
+
+### Creating a Worktree
+
+**From project view:**
+1. Click "+" next to project name
+2. Select "New Worktree"
+3. Worktree creates in background
+4. Status indicator shows progress
+5. Opens automatically when ready
+
+**From GitHub issue:**
+1. Open GitHub integration panel
+2. Browse issues list
+3. Click "Investigate" on any issue
+4. Jean creates worktree and loads issue context
+5. AI analyzes issue and proposes solution
+
+**From pull request:**
+1. Find PR in GitHub integration
+2. Click "Checkout PR"
+3. Creates worktree on PR's branch
+4. Loads PR context, reviews, and comments
+
+### Managing Worktrees
+
+**View all worktrees:**
+- Listed under each project in sidebar
+- Shows status badges (CI, PR, uncommitted changes)
+- Color-coded labels
+- Last opened timestamp
+
+**Switching between worktrees:**
+- Click any worktree in sidebar
+- Recent worktrees appear at top
+- Each has independent sessions and state
+
+**Quick actions:**
+- Right-click for context menu
+- Open in terminal
+- Open in editor (Zed, VS Code, Cursor, etc.)
+- View in Finder
+- Archive or delete
+
+### Archiving Workflow
+
+**Manual archiving:**
+1. Right-click worktree → Archive
+2. Confirmation dialog appears (if enabled)
+3. Worktree moves to archive
+4. Badge shows archived status
+
+**Viewing archives:**
+1. Press Cmd/Ctrl + Shift + A
+2. Archives listed by project
+3. Search and filter options
+4. Shows age and retention countdown
+
+**Restoring from archive:**
+1. Find archived worktree
+2. Click "Restore"
+3. Returns to active worktrees
+4. All data intact and ready to use
+
+### Cleanup & Deletion
+
+**Permanent deletion:**
+1. Right-click → Delete (or from Archive modal)
+2. Confirmation dialog with warning
+3. Runs teardown script if configured
+4. Removes Git worktree
+5. Deletes directory and all files
+6. Removes from Jean database
+
+**Teardown scripts:**
+```bash
+#!/bin/bash
+# Cleanup before deletion
+rm -rf node_modules
+rm -rf .next
+docker-compose down
+```
+
+**Auto-cleanup:**
+- Archived worktrees deleted after retention period
+- Runs daily cleanup check
+- Logs cleanup actions
+- No recovery possible after deletion
+
+## Configuration Options
+
+### Settings → Worktrees
+
+**Worktree Behavior:**
+- `auto_pull_base_branch`: Pull base before creating worktree (default: true)
+- `auto_archive_on_pr_merged`: Archive when PR merges (default: true)
+- `archive_retention_days`: Days before permanent deletion (default: 7)
+- `removal_behavior`: "archive" or "delete" on close (default: delete)
+
+**Confirmation Dialogs:**
+- `confirm_session_close`: Show confirmation before closing (default: true)
+
+### Per-Project Settings
+
+**Worktrees Location:**
+- Custom base directory
+- Browse to select location
+- Reset to default (~/jean)
+
+**Setup Script:**
+- Bash script to run on creation
+- Can use project-specific commands
+- Output displayed in UI
+
+## Best Practices
+
+### Worktree Naming
+
+**Random names are intentional:**
+- Avoid ambiguous names like "feature" or "fix"
+- Memorable animal/adjective combinations
+- Easy to reference in conversation
+- Branch names match worktree names
+
+**Manual naming not supported because:**
+- Reduces cognitive load
+- Prevents naming conflicts
+- Focuses on work, not naming things
+
+### Setup Scripts
+
+**Keep scripts idempotent:**
+```bash
+#!/bin/bash
+set -e  # Exit on error
+
+# Check if dependencies already installed
+if [ ! -d "node_modules" ]; then
+  bun install
+fi
+
+# Only build if needed
+if [ ! -d ".next" ]; then
+  bun run build
+fi
+```
+
+**Use for project-specific setup only:**
+- Don't install global tools
+- Assume Git and language runtimes present
+- Keep execution time under 2 minutes
+
+### Archive Management
+
+**Choose retention period based on workflow:**
+- **7 days**: Fast-moving teams, many PRs
+- **14 days**: Standard development cycles  
+- **30 days**: Slow review process, external dependencies
+- **Never**: Manual cleanup only (use with caution)
+
+**Archive vs. Delete:**
+- **Archive**: Safe default, can undo mistakes
+- **Delete**: Saves disk space, requires more care
+
+### Disk Space Management
+
+**Monitor worktree growth:**
+- Each worktree is a full Git checkout
+- Build artifacts (`node_modules`, `target/`, etc.) multiply storage
+- Clean up unused worktrees regularly
+- Use custom locations to spread across drives
+
+**Storage estimates:**
+- Small project (5 MB repo): ~50 MB per worktree
+- Medium project (50 MB repo): ~500 MB per worktree
+- Large project (500 MB repo + deps): ~5 GB per worktree
+
+### Conflict Resolution
+
+**When paths conflict:**
+1. Check if it's an archived worktree first
+2. Restore if you want to continue that work
+3. Use suggested name for new work
+4. Clean up archives if running out of names
+
+**When branches conflict:**
+1. Likely a remote branch already exists
+2. Use suggested name for new branch
+3. Or delete remote branch if no longer needed
+4. Pull requests preserve issue context automatically

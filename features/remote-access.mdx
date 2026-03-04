@@ -1,0 +1,577 @@
+---
+title: Remote Access
+description: HTTP server, WebSocket connections, authentication, and web browser access
+---
+
+## Overview
+
+Jean includes a built-in HTTP server with WebSocket support, enabling remote access to your projects and sessions from web browsers or other clients. All features available in the native app work in the browser.
+
+## Key Capabilities
+
+### HTTP Server
+
+**Architecture:**
+```rust
+// From src-tauri/src/http_server/
+mod auth;      // Token-based authentication
+mod dispatch;  // Request routing
+mod server;    // HTTP server setup
+mod websocket; // WebSocket connections
+```
+
+**Server features:**
+- HTTP/1.1 with WebSocket upgrade
+- Token-based authentication
+- CORS support for web clients
+- Static file serving (future)
+- RESTful API (future)
+
+**Configuration:**
+```typescript
+interface AppPreferences {
+  http_server_enabled: boolean          // Enable server
+  http_server_port: number              // Port (default: 3456)
+  http_server_token: string | null      // Auth token
+  http_server_auto_start: boolean       // Start on launch
+  http_server_localhost_only: boolean   // Bind to localhost
+  http_server_token_required: boolean   // Require token (default: true)
+}
+```
+
+### WebSocket Protocol
+
+**Event broadcasting:**
+```rust
+// WsBroadcaster sends events to all connected clients
+pub struct WsBroadcaster {
+    tx: broadcast::Sender<WsEvent>,
+}
+
+pub struct WsEvent {
+    pub event: String,
+    pub payload: Value,
+}
+```
+
+**Dual emission:**
+```rust
+// EmitExt trait sends to both Tauri IPC and WebSocket
+impl EmitExt for AppHandle {
+    fn emit_all<S>(&self, event: &str, payload: &S) -> Result<(), String> {
+        // Send to native app (Tauri IPC)
+        self.emit(event, payload.clone())?;
+        
+        // Broadcast to WebSocket clients
+        if let Some(ws) = self.try_state::<WsBroadcaster>() {
+            ws.broadcast(event, &serde_json::to_value(payload)?);
+        }
+        
+        Ok(())
+    }
+}
+```
+
+**Event types:**
+- Project events (created, updated, deleted)
+- Worktree events (creating, created, archived)
+- Session events (messages, status changes)
+- Git status updates
+- PR status changes
+- Terminal I/O
+
+### Authentication
+
+**Token generation:**
+```typescript
+// Automatically generated on first enable
+const token = generateSecureToken()  // Cryptographically random
+
+// Format: 32-character alphanumeric string
+// Example: "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+```
+
+**Authentication flow:**
+```typescript
+// 1. Client connects to WebSocket
+const ws = new WebSocket('ws://localhost:3456/ws')
+
+// 2. Send auth message
+ws.send(JSON.stringify({
+  type: 'auth',
+  token: 'your-token-here'
+}))
+
+// 3. Server validates token
+if (token_valid) {
+  // Connection established
+  // Start receiving events
+} else {
+  // Connection closed with error
+}
+```
+
+**Security:**
+- Token stored securely in app preferences
+- Required by default (configurable)
+- Can regenerate token at any time
+- Localhost-only binding by default
+
+### Localhost vs Network Binding
+
+**Localhost-only (default):**
+```rust
+// Binds to 127.0.0.1
+let addr = SocketAddr::from(([127, 0, 0, 1], port));
+// Only accessible from same machine
+```
+
+**Network binding:**
+```rust
+// Binds to 0.0.0.0
+let addr = SocketAddr::from(([0, 0, 0, 0], port));
+// Accessible from any device on network
+```
+
+**Security implications:**
+- Localhost: Safe, no network exposure
+- Network: Exposed to LAN, require token
+- Public network: DO NOT USE without VPN/SSH tunnel
+
+### Web Client Access
+
+**Connecting from browser:**
+```html
+<!-- Open in browser -->
+http://localhost:3456/
+
+<!-- With custom port -->
+http://localhost:8080/
+
+<!-- From other device (if network binding enabled) -->
+http://192.168.1.100:3456/
+```
+
+**Web client features:**
+- Full Jean UI in browser
+- All projects and worktrees
+- Chat sessions
+- File preview and diffs
+- Terminal access
+- Real-time updates via WebSocket
+
+**Limitations:**
+- No file system access (browser sandbox)
+- No native integrations (editor, terminal apps)
+- Slightly higher latency
+- Requires active HTTP server
+
+## How to Use
+
+### Enabling HTTP Server
+
+**Initial setup:**
+1. Open Settings (Cmd/Ctrl + ,)
+2. Navigate to "Remote Access" section
+3. Toggle "Enable HTTP Server"
+4. Token generates automatically
+5. Server starts immediately
+
+**Configure options:**
+```typescript
+// Auto-start on app launch
+http_server_auto_start: true
+
+// Port selection
+http_server_port: 3456  // Change if port conflict
+
+// Network access
+http_server_localhost_only: false  // Enable LAN access
+
+// Security
+http_server_token_required: true   // Always require token
+```
+
+### Managing Authentication
+
+**View token:**
+1. Settings → Remote Access
+2. Token displayed in "Authentication Token" field
+3. Click "Copy" to copy to clipboard
+
+**Regenerate token:**
+1. Click "Regenerate Token" button
+2. Confirm action
+3. New token generated
+4. All existing connections terminated
+5. Re-authenticate clients with new token
+
+**Disable token requirement:**
+1. Uncheck "Require Authentication Token"
+2. **WARNING:** Anyone on network can access
+3. Only use on trusted networks
+4. Not recommended
+
+### Connecting from Browser
+
+**Same machine:**
+1. Server must be running
+2. Open browser
+3. Navigate to `http://localhost:3456`
+4. Enter token when prompted
+5. Jean loads in browser
+
+**Different machine (LAN):**
+1. Enable network binding in settings
+2. Find host machine's IP address:
+   ```bash
+   # macOS/Linux
+   ifconfig | grep "inet "
+   
+   # Windows
+   ipconfig
+   ```
+3. On client machine, open browser
+4. Navigate to `http://<host-ip>:3456`
+5. Enter authentication token
+6. Jean loads remotely
+
+### Using WebSocket API
+
+**Connect to WebSocket:**
+```javascript
+const token = 'your-token-here'
+const ws = new WebSocket('ws://localhost:3456/ws')
+
+ws.onopen = () => {
+  // Authenticate
+  ws.send(JSON.stringify({
+    type: 'auth',
+    token: token
+  }))
+}
+
+ws.onmessage = (event) => {
+  const message = JSON.parse(event.data)
+  console.log('Event:', message.event)
+  console.log('Payload:', message.payload)
+}
+
+ws.onerror = (error) => {
+  console.error('WebSocket error:', error)
+}
+
+ws.onclose = () => {
+  console.log('Connection closed')
+}
+```
+
+**Receive events:**
+```javascript
+ws.onmessage = (event) => {
+  const { event: eventName, payload } = JSON.parse(event.data)
+  
+  switch (eventName) {
+    case 'worktree-created':
+      console.log('New worktree:', payload.worktree)
+      break
+    case 'session-message':
+      console.log('New message:', payload.message)
+      break
+    case 'pr-status-updated':
+      console.log('PR status:', payload.status)
+      break
+    // ... handle other events
+  }
+}
+```
+
+### Server Lifecycle
+
+**Manual start:**
+1. Settings → Remote Access
+2. Click "Start Server"
+3. Status indicator shows "Running"
+
+**Manual stop:**
+1. Click "Stop Server"
+2. All connections closed
+3. Status shows "Stopped"
+
+**Auto-start:**
+- Enable in settings
+- Server starts when Jean launches
+- Survives app restarts
+- Stops when app quits
+
+## Configuration Options
+
+### Settings → Remote Access
+
+**Server Control:**
+```typescript
+http_server_enabled: boolean
+// Current server state
+// Toggle to start/stop immediately
+
+http_server_auto_start: boolean
+// Default: false
+// Start server when Jean launches
+```
+
+**Network Configuration:**
+```typescript
+http_server_port: number
+// Default: 3456
+// Range: 1024-65535
+// Restart server after changing
+
+http_server_localhost_only: boolean
+// Default: true (secure)
+// false = bind to 0.0.0.0 (LAN access)
+```
+
+**Security:**
+```typescript
+http_server_token_required: boolean
+// Default: true (recommended)
+// false = allow unauthenticated access
+
+http_server_token: string | null
+// Auto-generated secure token
+// Regenerate to invalidate old tokens
+```
+
+## Best Practices
+
+### Security
+
+**Always use authentication:**
+- Keep `http_server_token_required: true`
+- Only disable on isolated networks
+- Never disable on public networks
+
+**Token management:**
+- Store token securely (password manager)
+- Don't share tokens publicly
+- Regenerate if compromised
+- Rotate tokens periodically
+
+**Network exposure:**
+- Keep `localhost_only: true` by default
+- Only enable network binding when needed
+- Use VPN for internet access
+- Consider SSH tunneling:
+  ```bash
+  ssh -L 3456:localhost:3456 user@remote-host
+  ```
+
+### Performance
+
+**Browser vs Native:**
+- Native app is faster
+- Browser adds latency
+- Terminal may lag remotely
+- Use native for primary work
+
+**Network optimization:**
+- Use LAN, not WiFi for best performance
+- Close unused connections
+- Limit concurrent clients
+- Monitor bandwidth usage
+
+### Use Cases
+
+**When to use remote access:**
+- Access from iPad/tablet
+- Quick checks from phone
+- Secondary display/machine
+- Team collaboration (view-only)
+- Remote pair programming
+
+**When to use native app:**
+- Primary development
+- Performance-critical work
+- File system operations
+- Editor integration needed
+- Terminal-heavy workflows
+
+### Port Selection
+
+**Default port (3456):**
+- Usually available
+- Easy to remember
+- Non-privileged port
+
+**Alternative ports:**
+```
+3000 - Common conflict (dev servers)
+8080 - Common conflict (HTTP proxies)
+5000 - Common conflict (Python servers)
+3456 - Jean default (good choice)
+9000 - Alternative option
+```
+
+**Check port availability:**
+```bash
+# macOS/Linux
+lsof -i :3456
+
+# Windows
+netstat -ano | findstr :3456
+```
+
+### Network Security
+
+**Firewall configuration:**
+```bash
+# macOS - allow port
+sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add /Applications/Jean.app
+
+# Linux - allow port
+sudo ufw allow 3456/tcp
+
+# Windows - allow port
+netsh advfirewall firewall add rule name="Jean" dir=in action=allow protocol=TCP localport=3456
+```
+
+**VPN setup for remote access:**
+1. Set up VPN server (WireGuard, Tailscale, etc.)
+2. Connect remote device to VPN
+3. Access via VPN IP address
+4. No port forwarding needed
+5. Encrypted tunnel
+
+**SSH tunnel for secure access:**
+```bash
+# On client machine
+ssh -L 3456:localhost:3456 user@server-ip
+
+# Then access via
+http://localhost:3456
+```
+
+### Monitoring
+
+**Check server status:**
+- Settings → Remote Access → Status indicator
+- Green = Running
+- Red = Stopped
+- Yellow = Error
+
+**View connected clients:**
+- Settings → Remote Access → Active Connections
+- Shows IP addresses
+- Connection timestamps
+- Kick option (future)
+
+**Server logs:**
+- Check app logs for errors
+- WebSocket connection events
+- Authentication failures
+- Port binding issues
+
+### Troubleshooting
+
+**Server won't start:**
+```bash
+# Check if port is in use
+lsof -i :3456
+
+# Kill process using port
+kill <PID>
+
+# Or change port in settings
+```
+
+**Can't connect from browser:**
+1. Verify server is running
+2. Check firewall settings
+3. Confirm correct IP address
+4. Test with curl:
+   ```bash
+   curl http://localhost:3456
+   ```
+
+**Authentication fails:**
+1. Verify token correct
+2. Check for extra spaces
+3. Try regenerating token
+4. Ensure token required is enabled
+
+**WebSocket disconnects:**
+- Check network stability
+- Verify token still valid
+- Look for proxy interference
+- Test with direct connection
+
+### Advanced Usage
+
+**Reverse proxy setup:**
+```nginx
+# nginx configuration
+server {
+    listen 80;
+    server_name jean.example.com;
+    
+    location / {
+        proxy_pass http://localhost:3456;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+**Custom WebSocket client:**
+```typescript
+class JeanWebSocket {
+  private ws: WebSocket
+  private token: string
+  
+  constructor(url: string, token: string) {
+    this.token = token
+    this.ws = new WebSocket(url)
+    this.setup()
+  }
+  
+  private setup() {
+    this.ws.onopen = () => {
+      this.authenticate()
+    }
+    
+    this.ws.onmessage = (event) => {
+      const { event: name, payload } = JSON.parse(event.data)
+      this.handleEvent(name, payload)
+    }
+  }
+  
+  private authenticate() {
+    this.send('auth', { token: this.token })
+  }
+  
+  private handleEvent(name: string, payload: any) {
+    // Custom event handling
+    this.emit(name, payload)
+  }
+  
+  public send(type: string, data: any) {
+    this.ws.send(JSON.stringify({ type, ...data }))
+  }
+}
+```
+
+**Docker deployment (future):**
+```dockerfile
+FROM rust:latest as builder
+WORKDIR /app
+COPY . .
+RUN cargo build --release
+
+FROM debian:bullseye-slim
+COPY --from=builder /app/target/release/jean /usr/local/bin/
+EXPOSE 3456
+CMD ["jean", "--http-server", "--port", "3456"]
+```

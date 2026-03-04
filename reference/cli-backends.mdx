@@ -1,0 +1,607 @@
+---
+title: 'CLI Backends Reference'
+description: 'Complete reference for Claude CLI, Codex CLI, and OpenCode setup'
+---
+
+## Overview
+
+Jean supports three CLI backends for AI interaction. This reference covers installation, authentication, configuration, and command-line usage for each.
+
+## Claude CLI
+
+### Installation
+
+**macOS (Homebrew)**:
+```bash
+brew install anthropics/claude/claude-cli
+```
+
+**Manual download**:
+- Visit the Claude CLI GitHub repository
+- Download the binary for your platform
+- Add to PATH
+
+**Verify installation**:
+```bash
+claude --version
+```
+
+### Authentication
+
+```bash
+# Interactive auth flow
+claude auth
+
+# Check auth status
+claude auth status
+
+# Logout
+claude auth logout
+```
+
+**API Key method**:
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."
+```
+
+### Configuration
+
+**Global settings**: `~/.claude/settings.json`
+
+```json
+{
+  "env": {
+    "ANTHROPIC_API_KEY": "sk-ant-...",
+    "ANTHROPIC_BASE_URL": "https://api.anthropic.com"
+  },
+  "default_model": "claude-opus-4"
+}
+```
+
+**Project settings**: `.claude/settings.json` in project root
+
+```json
+{
+  "env": {
+    "PROJECT_SPECIFIC_VAR": "value"
+  }
+}
+```
+
+**MCP servers**: `~/.claude.json` (global) or `.mcp.json` (project)
+
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/dir"],
+      "disabled": false
+    }
+  }
+}
+```
+
+### Command-Line Usage
+
+**Basic chat**:
+```bash
+claude "What is the capital of France?"
+```
+
+**Model selection**:
+```bash
+claude --model opus "Explain quantum computing"
+claude --model sonnet "Write a Python script"
+claude --model haiku "Quick question"
+```
+
+**Thinking levels**:
+```bash
+claude --thinking off "Simple query"
+claude --thinking think "Moderate reasoning"
+claude --thinking megathink "Complex problem"
+claude --thinking ultrathink "Deep reasoning"
+```
+
+**Effort levels** (Opus 4.6):
+```bash
+claude --model opus --effort low "Quick task"
+claude --model opus --effort high "Complex reasoning"
+claude --model opus --effort max "No limits"
+```
+
+**MCP config**:
+```bash
+# Pass inline MCP config
+claude --mcp-config '{"mcpServers":{"fs":{...}}}' "Query"
+
+# Use project .mcp.json
+claude --project-dir /path/to/project "Query"
+```
+
+**JSON schema output**:
+```bash
+claude --json-schema '{"type":"object","properties":{...}}' "Generate data"
+```
+
+### Environment Variables
+
+```bash
+ANTHROPIC_API_KEY          # API key
+ANTHROPIC_BASE_URL         # Custom endpoint (e.g., OpenRouter)
+ANTHROPIC_AUTH_TOKEN       # Alternative auth token
+ANTHROPIC_MODEL            # Default model
+ANTHROPIC_DEFAULT_OPUS_MODEL      # Opus model ID
+ANTHROPIC_DEFAULT_SONNET_MODEL    # Sonnet model ID
+ANTHROPIC_DEFAULT_HAIKU_MODEL     # Haiku model ID
+ANTHROPIC_SMALL_FAST_MODEL        # Fast model ID
+API_TIMEOUT_MS             # Request timeout (ms)
+CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC  # '1' to disable telemetry
+```
+
+### Status Interface
+
+```typescript
+interface ClaudeCliStatus {
+  installed: boolean           // Whether CLI is installed
+  version: string | null       // Installed version
+  path: string | null          // Path to binary
+  supports_auth_command: boolean  // Whether --auth is supported (v1.2+)
+}
+
+interface ClaudeAuthStatus {
+  authenticated: boolean       // Whether authenticated
+  error: string | null         // Error message if check failed
+}
+```
+
+## Codex CLI
+
+### Installation
+
+**Via installer** (recommended):
+- Visit https://openai.com/codex
+- Download installer for your platform
+- Run installer
+
+**Via npm** (if available):
+```bash
+npm install -g @openai/codex-cli
+```
+
+**Verify installation**:
+```bash
+codex --version
+```
+
+### Authentication
+
+```bash
+# Interactive auth
+codex auth
+
+# Check status
+codex auth status
+
+# Logout
+codex auth logout
+```
+
+**API Key method**:
+```bash
+export OPENAI_API_KEY="sk-..."
+```
+
+### Configuration
+
+**Global config**: `~/.codex/config.toml`
+
+```toml
+[auth]
+api_key = "sk-..."
+base_url = "https://api.openai.com/v1"
+
+[defaults]
+model = "gpt-5.3-codex"
+reasoning_effort = "high"
+
+[[mcp_servers]]
+name = "filesystem"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/dir"]
+
+[mcp_servers.env]
+FILESYSTEM_ROOT = "/allowed/path"
+```
+
+**Project config**: `.codex/config.toml` in project root
+
+### Command-Line Usage
+
+**Basic chat**:
+```bash
+codex "Explain binary search"
+```
+
+**Model selection**:
+```bash
+codex --model gpt-5.3-codex "Complex task"
+codex --model gpt-5.1-codex-mini "Quick query"
+```
+
+**Reasoning effort**:
+```bash
+codex --reasoning-effort low "Simple task"
+codex --reasoning-effort medium "Moderate reasoning"
+codex --reasoning-effort high "Complex problem"
+codex --reasoning-effort xhigh "Deep reasoning"
+```
+
+**Multi-agent mode** (experimental):
+```bash
+codex --multi-agent --max-threads 5 "Complex project task"
+```
+
+**MCP config**:
+```bash
+codex --config /path/to/config.toml "Query"
+```
+
+### Environment Variables
+
+```bash
+OPENAI_API_KEY             # API key
+CODEX_BASE_URL             # Custom endpoint
+CODEX_DEFAULT_MODEL        # Default model
+CODEX_CONFIG_PATH          # Custom config path
+```
+
+### Status Interface
+
+```typescript
+interface CodexCliStatus {
+  installed: boolean         // Whether CLI is installed
+  version: string | null     // Installed version
+  path: string | null        // Path to binary
+}
+
+interface CodexAuthStatus {
+  authenticated: boolean     // Whether authenticated
+  error: string | null       // Error message if check failed
+}
+```
+
+## OpenCode
+
+### Installation
+
+**Via npm**:
+```bash
+npm install -g opencode
+```
+
+**Via binary release**:
+- Visit https://github.com/opencode/opencode/releases
+- Download for your platform
+- Add to PATH
+
+**Verify installation**:
+```bash
+opencode --version
+```
+
+### Authentication
+
+OpenCode supports multiple providers:
+
+**Anthropic**:
+```bash
+opencode auth anthropic
+# Enter API key when prompted
+```
+
+**OpenAI**:
+```bash
+opencode auth openai
+# Enter API key when prompted
+```
+
+**OpenRouter**:
+```bash
+opencode auth openrouter
+# Enter API key when prompted
+```
+
+**Local models** (Ollama):
+```bash
+# No auth needed
+opencode config set provider ollama
+```
+
+### Configuration
+
+**Global config**: `~/.config/opencode/opencode.json`
+
+```json
+{
+  "provider": "anthropic",
+  "apiKey": "sk-ant-...",
+  "model": "claude-opus-4",
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/dir"]
+    }
+  },
+  "providers": {
+    "anthropic": {
+      "apiKey": "sk-ant-...",
+      "baseUrl": "https://api.anthropic.com"
+    },
+    "openai": {
+      "apiKey": "sk-...",
+      "baseUrl": "https://api.openai.com/v1"
+    },
+    "ollama": {
+      "baseUrl": "http://localhost:11434"
+    }
+  }
+}
+```
+
+**Project config**: `opencode.json` in project root
+
+### Command-Line Usage
+
+**Basic chat**:
+```bash
+opencode "Write a sorting algorithm"
+```
+
+**Model selection**:
+```bash
+# Anthropic via OpenCode
+opencode --model opencode/anthropic/claude-opus-4 "Query"
+
+# OpenAI via OpenCode
+opencode --model opencode/openai/gpt-5 "Query"
+
+# Local model via Ollama
+opencode --model opencode/ollama/codellama "Query"
+```
+
+**Provider override**:
+```bash
+opencode --provider openrouter --model anthropic/claude-opus "Query"
+```
+
+**MCP config**:
+```bash
+opencode --config /path/to/opencode.json "Query"
+```
+
+### Environment Variables
+
+```bash
+OPENCODE_API_KEY           # Default API key
+OPENCODE_BASE_URL          # Default base URL
+OPENCODE_PROVIDER          # Default provider
+OPENCODE_MODEL             # Default model
+OPENCODE_CONFIG_PATH       # Custom config path
+```
+
+### Status Interface
+
+```typescript
+interface OpencodeCliStatus {
+  installed: boolean         // Whether CLI is installed
+  version: string | null     // Installed version
+  path: string | null        // Path to binary
+}
+
+interface OpencodeAuthStatus {
+  authenticated: boolean     // Whether authenticated
+  error: string | null       // Error message if check failed
+}
+```
+
+## Backend Detection
+
+Jean detects backends by checking:
+
+1. **System PATH**: `which claude`, `which codex`, `which opencode`
+2. **Common locations**:
+   - macOS: `/usr/local/bin/`, `/opt/homebrew/bin/`
+   - Linux: `/usr/bin/`, `/usr/local/bin/`, `~/.local/bin/`
+   - Windows: `%ProgramFiles%`, `%LocalAppData%`, `%AppData%`
+
+3. **Platform-specific**:
+   - macOS: Checks Homebrew installation paths
+   - Windows: Checks registry keys
+   - Linux: Checks XDG directories
+
+## Version Requirements
+
+| Backend | Minimum Version | Recommended |
+|---------|----------------|-------------|
+| Claude CLI | 1.0.0 | Latest stable |
+| Codex CLI | 0.5.0 | Latest stable |
+| OpenCode | 0.1.0 | Latest stable |
+
+**Checking version**:
+```bash
+claude --version
+codex --version
+opencode --version
+```
+
+## Updating Backends
+
+**Claude CLI**:
+```bash
+brew upgrade claude-cli
+```
+
+**Codex CLI**:
+```bash
+codex update
+# Or re-run installer
+```
+
+**OpenCode**:
+```bash
+npm update -g opencode
+```
+
+## Troubleshooting
+
+### Backend Not Detected
+
+1. Verify installation: Run `claude --version` in terminal
+2. Check PATH: `echo $PATH` (Unix) or `echo %PATH%` (Windows)
+3. Reinstall via Jean UI: Preferences > Backends > Install
+4. Restart Jean after installation
+
+### Authentication Fails
+
+1. Run `[backend] auth` in terminal
+2. Follow interactive prompts
+3. Verify with `[backend] auth status`
+4. Check API key is valid (not expired/revoked)
+5. Restart Jean
+
+### Command Not Found
+
+```
+Error: /bin/sh: claude: command not found
+```
+
+**Solution**: Add CLI to PATH:
+
+```bash
+# ~/.zshrc or ~/.bashrc
+export PATH="$PATH:/path/to/cli"
+```
+
+### Permission Denied
+
+```
+Error: Permission denied: /usr/local/bin/claude
+```
+
+**Solution**:
+```bash
+chmod +x /usr/local/bin/claude
+```
+
+### MCP Servers Not Loading
+
+1. Check config file syntax (JSON/TOML)
+2. Verify file location matches backend:
+   - Claude: `.claude.json` or `.mcp.json`
+   - Codex: `config.toml`
+   - OpenCode: `opencode.json`
+3. Test MCP server manually:
+   ```bash
+   npx -y @modelcontextprotocol/server-filesystem /path
+   ```
+4. Check logs: Help > Open Logs Folder
+
+## Jean-Specific Integration
+
+Jean wraps CLI backends with additional functionality:
+
+### Features
+
+- **Persistent sessions**: Chat history saved across restarts
+- **UI integration**: Model/backend selection via dropdowns
+- **Event streaming**: Real-time message updates
+- **Error handling**: User-friendly error messages
+- **Process management**: Automatic cleanup on session close
+
+### Command Invocation
+
+Jean constructs CLI commands based on session settings:
+
+**Claude example**:
+```bash
+claude \
+  --model opus \
+  --thinking ultrathink \
+  --effort high \
+  --project-dir /path/to/worktree \
+  --mcp-config '{"mcpServers":{...}}' \
+  --json-schema '{...}' \
+  "User message"
+```
+
+**Codex example**:
+```bash
+codex \
+  --model gpt-5.3-codex \
+  --reasoning-effort high \
+  --config /path/to/config.toml \
+  --working-directory /path/to/worktree \
+  "User message"
+```
+
+**OpenCode example**:
+```bash
+opencode \
+  --model opencode/gpt-5.3-codex \
+  --provider openrouter \
+  --config /path/to/opencode.json \
+  --working-directory /path/to/worktree \
+  "User message"
+```
+
+### Process Lifecycle
+
+1. **Spawn**: Jean spawns CLI as child process
+2. **Stream**: STDOUT streamed to UI in real-time
+3. **Parse**: JSON stream parsed for structured output
+4. **Store**: Messages saved to session database
+5. **Cleanup**: Process killed on session close or cancel
+
+### Error Handling
+
+```typescript
+interface CliError {
+  code: number              // Exit code
+  stderr: string            // Error output
+  signal?: string           // Signal if killed
+}
+```
+
+Common exit codes:
+- `1` - General error
+- `2` - Authentication failed
+- `3` - API rate limit
+- `130` - Process interrupted (Ctrl+C)
+
+## Custom Providers (Claude CLI)
+
+Jean supports custom provider profiles for Claude CLI:
+
+### Profile Structure
+
+```typescript
+interface CustomCliProfile {
+  name: string                // Display name (e.g., "OpenRouter")
+  settings_json: string       // JSON string with env block
+  file_path?: string          // Path to saved settings file
+  supports_thinking?: boolean // Whether provider supports thinking/effort
+}
+```
+
+### Example Profiles
+
+See "Multi-Backend Setup" guide for predefined profiles (OpenRouter, MiniMax, Z.ai, Moonshot).
+
+### Creating Profiles
+
+1. Preferences > Advanced > CLI Profiles
+2. Add new profile
+3. Configure environment variables
+4. Save and select from provider dropdown

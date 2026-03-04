@@ -1,0 +1,489 @@
+---
+title: Using Magic Commands
+description: Automate PR creation, code review, commit messages, and issue investigation
+---
+
+## Overview
+
+Magic Commands are AI-powered workflows that automate common development tasks. They use specialized prompts and models to generate commits, PRs, reviews, and more.
+
+**Key concepts:**
+- Magic commands are accessed via `Cmd+M` (Magic Modal)
+- Each command uses a customizable prompt (editable in Preferences)
+- Commands can use different models/providers than your main session
+- Results appear as toasts with action buttons (e.g., "Open PR" link)
+
+## Opening the Magic Modal
+
+Press `Cmd+M` to open the Magic Commands modal. You'll see categories:
+
+- **Git**: Commit, Push, Pull, Resolve Conflicts
+- **GitHub**: Open PR, Update PR, Create Release Notes
+- **AI**: Review Code, Save Context, Load Context, Generate Recap
+- **Investigation**: Investigate Issue, Investigate PR, Investigate Workflow Run
+
+Use arrow keys to navigate, Enter to select, or type to filter commands.
+
+## Creating Pull Requests
+
+Jean can generate PR titles and descriptions by analyzing your commits and changes.
+
+<Steps>
+  <Step title="Make Sure You Have Commits">
+    Before creating a PR, make at least one commit in your worktree. The PR content is generated from:
+    - Commit messages
+    - Git diff (all changes vs. base branch)
+    - Any loaded context (issue descriptions, previous conversations)
+  </Step>
+
+  <Step title="Open Magic Modal">
+    Press `Cmd+M` and select **Open PR**.
+  </Step>
+
+  <Step title="Wait for Generation">
+    Jean will:
+    1. Collect commits and diff from your worktree
+    2. Send to a model (Haiku by default) with a specialized prompt
+    3. Generate a PR title and markdown body
+    4. Create the PR on GitHub via `gh` CLI
+    5. Link the PR to your worktree
+
+    A toast notification shows "PR created" with an **Open** button.
+  </Step>
+
+  <Step title="Review and Edit PR">
+    Click the **Open** button to view the PR on GitHub. You can edit the title/description there if needed.
+
+    The PR number and URL are now stored in your worktree and shown in the sidebar.
+  </Step>
+</Steps>
+
+### Customizing PR Generation
+
+You can customize the prompt used to generate PR content:
+
+1. Open Preferences (`Cmd+,`) → **Magic Prompts** tab
+2. Find **PR Content** in the list
+3. Click **Edit** and modify the prompt
+4. Variables available:
+   - `{current_branch}`: Your worktree branch name
+   - `{target_branch}`: Base branch (e.g., `main`)
+   - `{commit_count}`: Number of commits
+   - `{commits}`: Formatted list of commit messages
+   - `{diff}`: Full git diff
+   - `{context}`: Loaded context (issue descriptions, etc.)
+
+<Tip>
+  For better PR descriptions, load issue context before opening the PR. Jean will include the issue details in the prompt.
+</Tip>
+
+## Generating Commit Messages
+
+Jean can write commit messages by analyzing staged changes.
+
+<Steps>
+  <Step title="Stage Your Changes">
+    Use `git add` to stage the files you want to commit, or stage all changes with `git add .`.
+
+    You can also use Jean's built-in git diff viewer (`Cmd+G`) to review and stage changes.
+  </Step>
+
+  <Step title="Open Commit Modal">
+    Press `Cmd+Shift+C` to open the commit dialog.
+  </Step>
+
+  <Step title="Generate Message">
+    Click **Generate with AI** in the commit dialog.
+
+    Jean will:
+    1. Run `git status` and `git diff --staged`
+    2. Collect recent commit messages (to match your style)
+    3. Send to a model (Haiku by default)
+    4. Generate a concise commit message
+
+    The generated message appears in the text field. You can edit it before committing.
+  </Step>
+
+  <Step title="Commit and Push">
+    Click **Commit** to create the commit locally.
+
+    Or enable **Push after commit** to commit and push in one operation.
+  </Step>
+</Steps>
+
+### Commit Message Style
+
+By default, Jean analyzes your recent commits to match your style. Common styles:
+
+- **Conventional Commits**: `feat: add user login`, `fix: resolve crash on startup`
+- **Imperative mood**: `Add user authentication`, `Fix login validation bug`
+- **Present tense**: `Adds user authentication`, `Fixes login bug`
+
+You can customize the commit message prompt in Preferences → Magic Prompts → **Commit Message**.
+
+## Code Review
+
+Jean can review your changes and provide structured feedback.
+
+<Steps>
+  <Step title="Open Magic Modal">
+    Press `Cmd+M` and select **Review Code**.
+  </Step>
+
+  <Step title="Wait for Review">
+    Jean will:
+    1. Collect all commits and diff in the worktree
+    2. Send to a model (Haiku by default) with a review prompt
+    3. Analyze changes for:
+       - Security vulnerabilities (hardcoded secrets, injection flaws, etc.)
+       - Performance issues
+       - Code quality and maintainability
+       - Potential bugs
+       - Best practices violations
+    4. Generate a review with:
+       - **Summary**: Brief overview of changes
+       - **Findings**: List of issues (critical, warning, suggestion, praise)
+       - **Approval Status**: Approved, Changes Requested, or Needs Discussion
+  </Step>
+
+  <Step title="Review Results">
+    The review results appear in the **Review** panel on the right side of the chat window.
+
+    Each finding shows:
+    - Severity badge (Critical, Warning, Suggestion, Praise)
+    - File and line number
+    - Title and description
+    - Optional code suggestion
+  </Step>
+
+  <Step title="Fix Issues">
+    For each finding, you can:
+    - Click the file path to open it in your editor
+    - Copy the suggested fix
+    - Ask Claude to implement the fix in the chat
+    - Mark the finding as "Fixed" once resolved
+  </Step>
+
+  <Step title="Re-run Review">
+    After making changes, run the review again to verify fixes. Jean will generate a fresh review based on the current state.
+  </Step>
+</Steps>
+
+### Customizing Review Prompts
+
+You can customize what the review focuses on:
+
+1. Open Preferences → Magic Prompts → **Code Review**
+2. Edit the prompt to add or remove focus areas
+3. Variables available:
+   - `{branch_info}`: Current branch and base branch
+   - `{commits}`: Formatted commit history
+   - `{diff}`: Full git diff
+   - `{uncommitted_section}`: Uncommitted changes (if any)
+
+<Tip>
+  Add project-specific review criteria to the prompt. For example: "Check that all API endpoints have rate limiting" or "Verify that database migrations are reversible."
+</Tip>
+
+## Investigating Issues
+
+Jean can load GitHub issues and help you investigate bugs or plan features.
+
+<Steps>
+  <Step title="Open Magic Modal">
+    Press `Cmd+M` and select **Investigate Issue**.
+  </Step>
+
+  <Step title="Browse Issues">
+    The Issues tab shows all open issues from your repository. You can:
+    - Filter by labels, milestone, or assignee
+    - Search by title or number
+    - Sort by created date, updated date, or comments
+  </Step>
+
+  <Step title="Select Issue">
+    Click an issue to view details:
+    - Title and number
+    - Description
+    - All comments (chronological order)
+    - Labels and metadata
+  </Step>
+
+  <Step title="Investigate">
+    Click **Investigate Issue**. Jean will:
+    1. Save issue context to `.github/issues/<number>.json`
+    2. Create a new chat session (or use the current one)
+    3. Send a specialized prompt asking Claude to:
+       - Analyze the issue description
+       - Explore the codebase to find relevant code
+       - Identify root cause
+       - Check for regressions (if it's a bug)
+       - Propose a solution with specific file changes
+  </Step>
+
+  <Step title="Iterate">
+    Claude will respond with findings and recommendations. You can:
+    - Ask follow-up questions
+    - Request alternative approaches
+    - Have Claude implement the fix immediately
+    - Create a worktree from the issue (if you didn't already)
+  </Step>
+</Steps>
+
+### Investigation Prompt
+
+The default investigation prompt (Preferences → Magic Prompts → **Investigate Issue**) instructs Claude to:
+
+1. Read the issue context file
+2. Analyze expected vs. actual behavior
+3. Explore the codebase to find relevant code
+4. Identify root cause and constraints
+5. Check git history for regressions
+6. Propose a solution with specific files and test cases
+
+You can customize this to match your workflow (e.g., always check for TypeScript errors, run specific tests, etc.).
+
+## Investigating Pull Requests
+
+Similar to issue investigation, but for PRs.
+
+<Steps>
+  <Step title="Open Magic Modal">
+    Press `Cmd+M` and select **Investigate PR**.
+  </Step>
+
+  <Step title="Browse PRs">
+    The Pull Requests tab shows:
+    - Open PRs from your repository
+    - Draft status
+    - Review state (approved, changes requested, pending)
+    - CI check status
+  </Step>
+
+  <Step title="Select PR">
+    Click a PR to view:
+    - Title and description
+    - Branch information (head → base)
+    - All comments and reviews
+    - CI check results
+  </Step>
+
+  <Step title="Investigate">
+    Click **Investigate PR**. Jean will:
+    1. Save PR context to `.github/pulls/<number>.json`
+    2. Check out the PR branch (if not already)
+    3. Send a specialized prompt asking Claude to:
+       - Understand what the PR is trying to accomplish
+       - Review the code changes
+       - Analyze reviewer feedback
+       - Perform a security review
+       - Identify action items to get the PR merged
+  </Step>
+
+  <Step title="Address Feedback">
+    Claude will summarize reviewer feedback and suggest fixes. You can:
+    - Ask Claude to implement requested changes
+    - Respond to review comments
+    - Run tests and fix CI failures
+    - Update the PR description
+  </Step>
+</Steps>
+
+### Security Review in PR Investigation
+
+The default PR investigation prompt includes a security checklist:
+
+- Malicious or obfuscated code
+- Suspicious dependency changes
+- Hardcoded secrets or tokens
+- Backdoors or unauthorized access
+- Injection vulnerabilities (SQL, command, XSS)
+- Weakened authentication or permissions
+- Suspicious file system or environment access
+
+<Tip>
+  When reviewing external contributions or dependency updates, always run the PR investigation with the security checklist enabled.
+</Tip>
+
+## Investigating Failed Workflows
+
+Jean can help debug GitHub Actions failures.
+
+<Steps>
+  <Step title="Open Magic Modal">
+    Press `Cmd+M` and select **Investigate Workflow Run** (or use the GitHub Dashboard via `Cmd+Shift+D`).
+  </Step>
+
+  <Step title="Select Failed Run">
+    Browse recent workflow runs and select a failed one. Jean will show:
+    - Workflow name
+    - Branch and commit
+    - Failed jobs
+    - Error output
+  </Step>
+
+  <Step title="Investigate">
+    Click **Investigate Run**. Jean will:
+    1. Fetch the workflow run logs via `gh run view --log-failed`
+    2. Send a prompt asking Claude to:
+       - Identify the failure cause
+       - Determine if it's a code issue, config issue, or flaky test
+       - Propose a fix with specific changes
+  </Step>
+
+  <Step title="Fix and Re-run">
+    Claude will suggest fixes. After implementing them:
+    - Commit and push the changes
+    - Re-run the workflow via `gh run rerun`
+    - Or re-run from the GitHub UI
+  </Step>
+</Steps>
+
+## Saving and Loading Context
+
+As sessions grow, you can save context to summaries and load them later.
+
+### Save Context
+
+<Steps>
+  <Step title="Open Magic Modal">
+    Press `Cmd+M` and select **Save Context**.
+  </Step>
+
+  <Step title="Wait for Summary">
+    Jean will:
+    1. Send the full conversation history to Opus (by default)
+    2. Generate a structured summary with:
+       - Main goal and key decisions
+       - Trade-offs considered
+       - Problems solved
+       - Current state and next steps
+       - Important file paths and code patterns
+    3. Save to `.ai/summaries/<slug>.md`
+  </Step>
+
+  <Step title="Open Summary">
+    The toast notification includes an **Open** button to view the saved summary file.
+  </Step>
+</Steps>
+
+### Load Context
+
+<Steps>
+  <Step title="Open Magic Modal">
+    Press `Cmd+M` and select **Load Context**.
+  </Step>
+
+  <Step title="Select Summaries">
+    The Contexts tab shows all saved summaries in `.ai/summaries/`. You can select multiple summaries to load.
+  </Step>
+
+  <Step title="Load into Session">
+    Click **Load Selected**. Jean will:
+    1. Read the selected summary files
+    2. Send them as context in your next message
+    3. Claude will have access to the summarized context
+  </Step>
+</Steps>
+
+<Tip>
+  Use Save/Load Context to transfer knowledge between sessions or to onboard Claude after clearing context.
+</Tip>
+
+## Resolving Git Conflicts
+
+When merges or rebases produce conflicts, Jean can help resolve them.
+
+<Steps>
+  <Step title="Detect Conflicts">
+    After a failed merge/rebase, Jean will show which files have conflicts.
+  </Step>
+
+  <Step title="Open Magic Modal">
+    Press `Cmd+M` and select **Resolve Conflicts**.
+  </Step>
+
+  <Step title="AI-Assisted Resolution">
+    Jean will:
+    1. Run `git diff` to get conflict markers
+    2. Send the diff to Opus (by default)
+    3. Ask Claude to:
+       - Explain what's conflicting in each file
+       - Recommend resolutions
+       - Provide git commands to stage resolved files
+  </Step>
+
+  <Step title="Apply Fixes">
+    Claude can directly edit conflicted files to remove markers and merge changes. After each file:
+    ```bash
+    git add <file>
+    ```
+  </Step>
+
+  <Step title="Complete Operation">
+    Once all conflicts are resolved:
+    ```bash
+    git merge --continue
+    # or
+    git rebase --continue
+    # or
+    git cherry-pick --continue
+    ```
+  </Step>
+</Steps>
+
+## Common Pitfalls
+
+<Warning>
+  **PR Creation Fails**: If `gh pr create` fails, check:
+  - GitHub CLI is installed and authenticated (`gh auth status`)
+  - You have at least one pushed commit
+  - The remote repository exists and you have push access
+
+  **Solution**: Run `gh auth login` to authenticate, or manually create the PR on GitHub and link it with **Update PR**.
+</Warning>
+
+<Warning>
+  **Commit Message Too Generic**: If the generated commit message is vague ("Update files", "Fix bug"), it's because:
+  - The diff is too large or complex
+  - The changes don't follow a clear pattern
+  - Recent commits don't provide good style examples
+
+  **Solution**: Edit the message before committing, or break changes into smaller, focused commits.
+</Warning>
+
+<Warning>
+  **Review Finds Nothing**: If code review returns no findings, it might be:
+  - Changes are very simple (e.g., adding a comment)
+  - The review model is too lenient (try using Opus instead of Haiku)
+
+  **Solution**: Customize the review prompt to be more specific about what to check.
+</Warning>
+
+## Best Practices
+
+<Tip>
+  **Load Context Before Creating PRs**: If your worktree was created from an issue, load the issue context before running **Open PR**. This helps generate better PR descriptions.
+</Tip>
+
+<Tip>
+  **Review Before Merging**: Always run code review before merging to main. Even if tests pass, the review may catch security issues or code quality problems.
+</Tip>
+
+<Tip>
+  **Save Context at Milestones**: After completing major features or fixing complex bugs, save context. This creates a knowledge base you can reference later.
+</Tip>
+
+<Tip>
+  **Use Faster Models for Simple Commands**: Commit messages and PR titles don't need Opus. Use Haiku (default) for speed and cost savings.
+</Tip>
+
+<Tip>
+  **Customize Prompts for Your Team**: If your team has specific conventions (commit message format, PR template, review checklist), customize the magic prompts to match.
+</Tip>
+
+## Next Steps
+
+- [GitHub Workflows](/guides/github-workflows) - Deep dive into issue and PR workflows
+- [Customization](/guides/customization) - Customize magic prompt templates
+- [Keyboard Shortcuts](/guides/keyboard-shortcuts) - Faster access to magic commands

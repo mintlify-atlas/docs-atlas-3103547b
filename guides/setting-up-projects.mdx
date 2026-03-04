@@ -1,0 +1,266 @@
+---
+title: Setting Up Projects
+description: Add projects, configure settings, and set up MCP servers
+---
+
+## Overview
+
+Projects in Jean are git repositories that you work on. Each project can have multiple worktrees (isolated branches) and customizable settings. This guide walks through adding projects and configuring them for optimal workflow.
+
+## Adding Your First Project
+
+<Steps>
+  <Step title="Open the Projects Sidebar">
+    Press `Cmd+B` (Mac) or `Ctrl+B` (Windows/Linux) to toggle the left sidebar if it's hidden.
+  </Step>
+
+  <Step title="Add a New Project">
+    Click the **"+"** button at the top of the sidebar. You'll see the "Add Project" dialog.
+  </Step>
+
+  <Step title="Select Your Repository">
+    Click **Browse** to navigate to your git repository's root directory. Jean will automatically detect:
+    - Project name (from directory name)
+    - Default branch (e.g., `main` or `master`)
+    - Remote URL (for GitHub integration)
+  </Step>
+
+  <Step title="Review Settings">
+    Before clicking **Add Project**, verify:
+    - The project name is correct (you can rename it later)
+    - The default branch matches your main branch
+    - The path points to the correct repository
+  </Step>
+
+  <Step title="Add the Project">
+    Click **Add Project**. The project appears in your sidebar and you can now create worktrees.
+  </Step>
+</Steps>
+
+## Configuring Project Settings
+
+Each project has its own settings that override global defaults.
+
+<Steps>
+  <Step title="Open Project Settings">
+    Right-click the project in the sidebar and select **Settings**, or click the project name to focus it, then press `Cmd+,`.
+  </Step>
+
+  <Step title="General Settings">
+    In the **General** tab, you can configure:
+
+    **Project Name**: Display name shown in the sidebar
+
+    **Default Branch**: Branch used as the base for new worktrees (usually `main` or `master`)
+
+    **Worktrees Location**: Custom directory for storing worktrees. By default, worktrees are created in `~/jean/<project-name>/`. You can set a custom location like:
+    - `/Users/you/dev/workspaces` for a centralized location
+    - Same directory as your repository for keeping everything together
+
+    <Warning>
+      Changing the worktrees location does NOT move existing worktrees. It only affects new worktrees.
+    </Warning>
+
+    **Project Avatar**: Upload a custom icon to personalize your project (PNG, JPG, or SVG)
+  </Step>
+
+  <Step title="Backend & Model Settings">
+    Configure which AI backend and model to use for this project:
+
+    **Backend**: Choose between Claude, Codex, or OpenCode
+    - Claude: Anthropic's models (Opus, Sonnet, Haiku)
+    - Codex: OpenAI's GPT models optimized for coding
+    - OpenCode: Custom model configurations
+
+    **Provider**: Select API provider (Anthropic, OpenRouter, custom)
+
+    **Default Model**: Set the model used for new sessions in this project
+
+    <Tip>
+      Leave these blank to use your global defaults from Preferences.
+    </Tip>
+  </Step>
+
+  <Step title="Custom System Prompt">
+    Add a custom system prompt that gets appended to every chat session in this project. This is useful for:
+    - Project-specific coding standards
+    - Architecture guidelines
+    - Tech stack reminders
+
+    Example:
+    ```
+    This project uses React 19 with TypeScript. Always use functional components
+    with hooks. Follow the existing patterns in src/components/. Use Tailwind
+    for styling. Run tests with `bun test` before committing.
+    ```
+  </Step>
+</Steps>
+
+## Setting Up MCP Servers
+
+MCP (Model Context Protocol) servers provide additional tools and context to Claude. Common servers include:
+- **filesystem**: Access to read/write files
+- **brave-search**: Web search capabilities
+- **github**: GitHub API integration
+- **postgres**: Database queries
+
+<Steps>
+  <Step title="Install MCP Servers">
+    MCP servers are configured in `~/.claude.json` (for Claude backend). Example configuration:
+
+    ```json
+    {
+      "mcpServers": {
+        "filesystem": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/you/projects"]
+        },
+        "brave-search": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+          "env": {
+            "BRAVE_API_KEY": "your-api-key"
+          }
+        },
+        "github": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-github"],
+          "env": {
+            "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_your_token"
+          }
+        }
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Enable Servers Globally">
+    Open **Preferences** (`Cmd+,`) → **MCP Servers** tab. You'll see all configured servers.
+
+    Toggle the switches to enable servers globally (they'll be available in all projects by default).
+  </Step>
+
+  <Step title="Enable Servers Per-Project">
+    For finer control, disable global defaults and enable servers per-project:
+
+    1. Open project settings (right-click project → Settings)
+    2. Go to the **MCP Servers** tab
+    3. Enable only the servers needed for this project
+
+    <Tip>
+      Enable `github` only for projects with GitHub remotes. Enable `postgres` only for backend projects.
+    </Tip>
+  </Step>
+
+  <Step title="Test MCP Servers">
+    In Preferences → MCP Servers, click **Check Health** to verify all servers are running correctly.
+
+    Healthy servers show a green checkmark. Failed servers show error details.
+  </Step>
+</Steps>
+
+## Jean.json Setup Script
+
+The `jean.json` file in your repository root defines setup commands that run when creating new worktrees.
+
+<Steps>
+  <Step title="Create jean.json">
+    In your repository root, create a `jean.json` file:
+
+    ```json
+    {
+      "scripts": {
+        "setup": "bun install && bun run build",
+        "run": "bun run dev"
+      }
+    }
+    ```
+
+    - **setup**: Runs when creating a new worktree (install dependencies, build, etc.)
+    - **run**: Triggered by `Cmd+R` in Jean (start dev server, run tests, etc.)
+  </Step>
+
+  <Step title="Test the Setup Script">
+    Create a new worktree (`Cmd+N`). Jean will:
+    1. Create the git worktree
+    2. Run the setup script automatically
+    3. Show script output in the worktree's logs
+
+    If the setup fails, you'll see error details and can debug the issue.
+  </Step>
+
+  <Step title="Advanced Setup Scripts">
+    You can use multi-line scripts or shell commands:
+
+    ```json
+    {
+      "scripts": {
+        "setup": "npm install && npm run build && cp .env.example .env",
+        "run": "docker-compose up -d && npm run dev"
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+## Organizing Projects with Folders
+
+<Steps>
+  <Step title="Create a Folder">
+    Click the **"+"** button and select **New Folder**. Name it (e.g., "Work", "Personal", "Open Source").
+  </Step>
+
+  <Step title="Move Projects into Folders">
+    Drag and drop projects onto folders in the sidebar to organize them.
+  </Step>
+
+  <Step title="Reorder Projects">
+    Drag projects up and down to reorder them within folders or at the root level.
+  </Step>
+</Steps>
+
+## Common Pitfalls
+
+<Warning>
+  **Not a Git Repository**: Jean requires projects to be git repositories. If you select a non-git folder, the "Add Project" button will be disabled.
+
+  **Solution**: Run `git init` in the directory first, or select a different folder.
+</Warning>
+
+<Warning>
+  **Wrong Default Branch**: If Jean detects the wrong default branch (e.g., `master` when you use `main`), manually correct it in project settings.
+
+  **Why it matters**: New worktrees are created from the default branch. If it's wrong, your worktrees will be out of date.
+</Warning>
+
+<Warning>
+  **MCP Servers Not Starting**: If MCP servers show as unhealthy:
+  - Check that Node.js/npm/npx is installed
+  - Verify API keys in `~/.claude.json`
+  - Look at error messages in the health check results
+  - Try running the server command manually in a terminal
+</Warning>
+
+## Best Practices
+
+<Tip>
+  **Use Folders for Context Switching**: Organize projects by client, company, or type (personal, work, experiments). This makes it faster to find projects.
+</Tip>
+
+<Tip>
+  **Set Per-Project Models**: Use faster, cheaper models (Haiku) for experimental projects. Use premium models (Opus) for production work.
+</Tip>
+
+<Tip>
+  **Custom Worktrees Location**: If you're working on a shared filesystem or network drive, set a custom worktrees location to avoid performance issues.
+</Tip>
+
+<Tip>
+  **Keep Setup Scripts Fast**: Long setup scripts delay worktree creation. Move heavy operations (like full rebuilds) to the `run` script instead.
+</Tip>
+
+## Next Steps
+
+- [Working with Worktrees](/guides/working-with-worktrees) - Create and manage isolated branches
+- [Managing Sessions](/guides/managing-sessions) - Organize your AI conversations
+- [Customization](/guides/customization) - Personalize Jean's appearance and behavior

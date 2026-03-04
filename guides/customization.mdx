@@ -1,0 +1,557 @@
+---
+title: Customization
+description: Personalize themes, fonts, prompts, and keybindings
+---
+
+## Overview
+
+Jean is highly customizable to match your preferences and workflow. You can adjust appearance, behavior, AI prompts, and keyboard shortcuts.
+
+All settings are accessed via **Preferences** (`Cmd+,` on Mac, `Ctrl+,` on Windows/Linux).
+
+## Appearance
+
+### Themes
+
+<Steps>
+  <Step title="Open Preferences">
+    Press `Cmd+,` and go to the **Appearance** tab.
+  </Step>
+
+  <Step title="Select Theme">
+    Choose from:
+    - **System**: Follows your OS theme (light/dark mode)
+    - **Light**: Always light mode
+    - **Dark**: Always dark mode
+
+    The UI updates immediately.
+  </Step>
+
+  <Step title="Customize Syntax Highlighting">
+    Scroll down to **Code Syntax Theme**.
+
+    **Dark Mode Themes**:
+    - Vitesse Black (default)
+    - Vitesse Dark
+    - GitHub Dark
+    - GitHub Dark Dimmed
+    - Dracula
+    - Dracula Soft
+    - Nord
+    - Catppuccin Mocha/Macchiato/Frappé
+    - One Dark Pro
+    - Tokyo Night
+    - Rosé Pine/Moon
+
+    **Light Mode Themes**:
+    - GitHub Light (default)
+    - Vitesse Light
+    - Catppuccin Latte
+    - One Light
+    - Rosé Pine Dawn
+
+    Choose separate themes for dark and light modes.
+  </Step>
+</Steps>
+
+### Fonts and Sizing
+
+<Steps>
+  <Step title="UI Font">
+    In **Appearance** → **UI Font**, choose from:
+    - **Geist** (default, modern sans-serif)
+    - **Inter** (popular web font)
+    - **Roboto** (Google's font)
+    - **Lato** (humanist sans-serif)
+    - **System Default** (uses your OS font)
+
+    This affects sidebar, toolbar, buttons, and menus.
+  </Step>
+
+  <Step title="Chat Font">
+    In **Appearance** → **Chat Font**, choose from:
+    - **Geist** (default for readability)
+    - **JetBrains Mono** (monospace with ligatures)
+    - **Fira Code** (monospace with ligatures)
+    - **Source Code Pro** (Adobe's monospace)
+    - **Inter/Roboto/Lato** (sans-serif options)
+
+    This affects chat messages, code blocks, and file diffs.
+  </Step>
+
+  <Step title="Font Sizes">
+    Adjust **UI Font Size** and **Chat Font Size** independently:
+    - Range: 12px - 24px
+    - Default: 16px
+
+    Drag the slider or type a custom value.
+  </Step>
+
+  <Step title="Zoom Level">
+    Adjust **Zoom Level** to scale the entire app:
+    - Range: 50% - 200%
+    - Default: 90%
+
+    Useful for high-DPI displays or vision accessibility.
+  </Step>
+</Steps>
+
+### Canvas Layout
+
+<Steps>
+  <Step title="Choose Layout Mode">
+    In **Appearance** → **Canvas Layout**, choose:
+
+    **Grid** (default): Cards displayed in a grid with larger previews
+
+    **List**: Compact rows for seeing more sessions at once
+  </Step>
+
+  <Step title="Toggle Keybinding Hints">
+    Enable **Show Keybinding Hints** to display keyboard shortcuts at the bottom of canvas views.
+
+    Disable for a cleaner UI once you've memorized the shortcuts.
+  </Step>
+</Steps>
+
+## AI Models and Providers
+
+### Default Model
+
+<Steps>
+  <Step title="Open General Settings">
+    In Preferences → **General** tab, find **AI Model**.
+  </Step>
+
+  <Step title="Select Backend">
+    Choose the CLI backend:
+    - **Claude**: Anthropic's Claude models
+    - **Codex**: OpenAI's GPT models optimized for coding
+    - **OpenCode**: Custom model configurations
+  </Step>
+
+  <Step title="Select Model">
+    **Claude models**:
+    - **Opus 4.6**: Most capable, best for complex tasks
+    - **Opus 4.5**: Previous generation
+    - **Sonnet 4.6**: Balanced performance and speed (recommended)
+    - **Sonnet 4.5**: Previous generation
+    - **Haiku**: Fastest, best for simple tasks
+
+    **Codex models**:
+    - **GPT 5.3 Codex**: Latest model
+    - **GPT 5.2 Codex**: Previous generation
+    - **GPT 5.1 Codex Max**: Maximum capability
+    - **GPT 5.2**: Base model
+    - **GPT 5.1 Codex Mini**: Lightweight and fast
+
+    **OpenCode models**: Fully customizable (provider/model format)
+  </Step>
+
+  <Step title="Thinking Level (Claude Only)">
+    Choose extended thinking depth:
+    - **Off**: No extended thinking (fastest)
+    - **Think (4K)**: Light reasoning (recommended)
+    - **Megathink (10K)**: Deep reasoning
+    - **Ultrathink (32K)**: Maximum reasoning (slowest, most thorough)
+  </Step>
+
+  <Step title="Effort Level (Opus 4.6 Only)">
+    For Claude Opus 4.6 with adaptive thinking:
+    - **Low**: Minimal thinking
+    - **Medium**: Moderate thinking
+    - **High**: Deep reasoning (recommended)
+    - **Max**: No limits on thinking
+  </Step>
+</Steps>
+
+### Custom Providers
+
+<Steps>
+  <Step title="Add Custom Provider">
+    In Preferences → **Providers** tab, click **Add Provider**.
+  </Step>
+
+  <Step title="Choose Preset or Custom">
+    **Presets**:
+    - **OpenRouter**: Route requests to multiple providers
+    - **MiniMax**: Chinese AI provider
+    - **Z.ai**: ZhiPu AI (GLM models)
+    - **Moonshot**: Kimi AI
+
+    **Custom**: Define your own provider with JSON settings.
+  </Step>
+
+  <Step title="Configure Provider">
+    For custom providers, edit the JSON settings:
+
+    ```json
+    {
+      "env": {
+        "ANTHROPIC_BASE_URL": "https://api.example.com",
+        "ANTHROPIC_AUTH_TOKEN": "your-api-key",
+        "ANTHROPIC_MODEL": "custom-model-name"
+      }
+    }
+    ```
+
+    This maps to Claude CLI's settings format.
+  </Step>
+
+  <Step title="Set as Default">
+    In Preferences → **General** → **Default Provider**, select your custom provider.
+
+    New sessions will use this provider by default.
+  </Step>
+</Steps>
+
+## Magic Prompts
+
+Magic prompts are customizable templates used by AI-powered features.
+
+<Steps>
+  <Step title="Open Magic Prompts">
+    In Preferences → **Magic Prompts** tab, you'll see all available prompts:
+
+    - Investigate Issue
+    - Investigate PR
+    - PR Content
+    - Commit Message
+    - Code Review
+    - Context Summary
+    - Resolve Conflicts
+    - Investigate Workflow Run
+    - Release Notes
+    - Session Naming
+    - Session Recap
+    - Investigate Security Alert
+    - Investigate Advisory
+    - Investigate Linear Issue
+    - Global System Prompt
+    - Parallel Execution Prompt
+  </Step>
+
+  <Step title="Edit a Prompt">
+    Click **Edit** next to any prompt to open the editor.
+
+    You'll see:
+    - **Current prompt**: The active template
+    - **Default prompt**: Jean's built-in default
+    - **Variables**: Available placeholders (e.g., `{commits}`, `{diff}`)
+  </Step>
+
+  <Step title="Customize Prompt">
+    Modify the prompt to match your workflow. Example:
+
+    **Default Commit Message Prompt**:
+    ```
+    <task>Generate a commit message for the following changes</task>
+
+    <staged_diff>
+    {diff}
+    </staged_diff>
+    ```
+
+    **Customized for Conventional Commits**:
+    ```
+    <task>Generate a commit message using Conventional Commits format</task>
+
+    <format>
+    <type>(<scope>): <description>
+
+    [optional body]
+
+    [optional footer]
+
+    Types: feat, fix, docs, style, refactor, test, chore
+    </format>
+
+    <staged_diff>
+    {diff}
+    </staged_diff>
+
+    <recent_commits>
+    {recent_commits}
+    </recent_commits>
+    ```
+  </Step>
+
+  <Step title="Override Model/Provider">
+    Each magic prompt can use a different model/provider:
+
+    Click **Model Override** and select:
+    - **None**: Use default model
+    - **Haiku/Sonnet/Opus**: Claude models
+    - **Codex models**: GPT models
+    - **OpenCode models**: Custom models
+
+    Click **Provider Override** to choose a specific provider (or **None** to use default).
+
+    Click **Backend Override** to force a specific backend (Claude/Codex/OpenCode).
+
+    <Tip>
+      Use lightweight models (Haiku, GPT 5.1 Codex Mini) for simple prompts like commit messages and release notes. Use premium models (Opus, GPT 5.3 Codex) for investigation and code review.
+    </Tip>
+  </Step>
+
+  <Step title="Reset to Default">
+    Click **Reset to Default** to restore Jean's built-in prompt.
+  </Step>
+</Steps>
+
+### Global System Prompt
+
+The **Global System Prompt** is appended to every chat session (like `~/.claude/CLAUDE.md`).
+
+**Default includes**:
+- Plan mode preference for non-trivial tasks
+- Subagent strategy for parallel work
+- Self-improvement loop (learning from corrections)
+- Verification checklist before marking tasks complete
+- Autonomous bug fixing guidelines
+- Task management with `.ai/todo.md` and `.ai/lessons.md`
+
+**Customize this to**:
+- Add team-specific coding standards
+- Enforce architectural patterns
+- Set testing requirements
+- Define code review criteria
+
+## Keyboard Shortcuts
+
+<Steps>
+  <Step title="Open Keybindings">
+    In Preferences → **Keybindings** tab, you'll see all shortcuts organized by category:
+
+    - **Navigation**: Sidebar, preferences, menus, etc.
+    - **Git**: Commit, diff, merge, etc.
+    - **Chat**: Sessions, input, plans, etc.
+  </Step>
+
+  <Step title="Customize a Shortcut">
+    Click on a shortcut to edit it. Press the desired key combination.
+
+    Format:
+    - `Mod+Key`: `Mod` is `Cmd` on Mac, `Ctrl` on Windows/Linux
+    - `Shift+Key`, `Alt+Key`, `Mod+Shift+Key`, etc.
+
+    Examples:
+    - `mod+l`: Focus chat input
+    - `mod+shift+c`: Open commit modal
+    - `mod+alt+arrowright`: Next session
+  </Step>
+
+  <Step title="Conflict Detection">
+    If your shortcut conflicts with an existing one, Jean will warn you.
+
+    Choose to:
+    - **Replace**: Remove the conflict and assign your shortcut
+    - **Cancel**: Keep the existing assignment
+  </Step>
+
+  <Step title="Reset Shortcuts">
+    Click **Reset All to Defaults** to restore Jean's built-in keybindings.
+  </Step>
+</Steps>
+
+See [Keyboard Shortcuts](/guides/keyboard-shortcuts) for a complete reference.
+
+## Behavior Settings
+
+### Git and Polling
+
+<Steps>
+  <Step title="Git Poll Interval">
+    How often Jean checks git status (local operations like `git status`, `git log`).
+
+    Options: 10s, 30s, 1m, 2m, 5m, 10m (default: 60s)
+
+    Lower = more responsive, higher CPU usage
+  </Step>
+
+  <Step title="Remote Poll Interval">
+    How often Jean checks remote APIs (GitHub PR status, CI checks, security alerts).
+
+    Options: 30s, 1m, 2m, 5m, 10m (default: 60s)
+
+    Lower = more responsive, higher API usage (may hit rate limits)
+  </Step>
+
+  <Step title="Auto-Pull Base Branch">
+    When enabled, Jean pulls the latest changes from the default branch before creating a new worktree.
+
+    **Trade-off**: Adds a few seconds to worktree creation but ensures you start from the latest code.
+  </Step>
+
+  <Step title="Auto-Archive on PR Merged">
+    When enabled, Jean automatically archives worktrees when their PR is merged.
+
+    **Why useful**: Keeps your sidebar clean and focused on active work.
+  </Step>
+</Steps>
+
+### Session Behavior
+
+<Steps>
+  <Step title="Session Removal Behavior">
+    What happens when you close a session or worktree:
+
+    **Archive** (default): Soft-delete; can be restored later
+
+    **Delete**: Permanent deletion; cannot be undone
+  </Step>
+
+  <Step title="Archive Retention Days">
+    How long to keep archived items before permanent deletion:
+
+    Options: Never (keep forever), 7, 14, 30, 60, 90 days (default: 7 days)
+  </Step>
+
+  <Step title="Confirm Session Close">
+    When enabled, Jean shows a confirmation dialog before closing sessions/worktrees.
+
+    **Useful if**: You accidentally press `Cmd+W` often.
+  </Step>
+
+  <Step title="Restore Last Session">
+    When enabled, switching projects restores the last worktree and session you were viewing.
+
+    **Useful for**: Quickly resuming work after switching projects.
+  </Step>
+
+  <Step title="Close Original on Clear Context">
+    When enabled, clearing context (via `Cmd+Shift+Y` or `Cmd+Shift+Enter`) closes the original session.
+
+    **Why**: Prevents clutter from abandoned sessions after clearing context.
+  </Step>
+</Steps>
+
+### Auto-Naming
+
+<Steps>
+  <Step title="Auto-Branch Naming">
+    When enabled, Jean generates branch names from the first message in a session.
+
+    Example: "Fix login timeout" → `fix-login-timeout`
+
+    Model used: Configurable (default: Haiku)
+  </Step>
+
+  <Step title="Auto-Session Naming">
+    When enabled, Jean generates session names from the first message.
+
+    Example: "Help me implement user authentication" → "User authentication setup"
+
+    Model used: Configurable (default: Haiku)
+  </Step>
+</Steps>
+
+### Experimental Features
+
+<Steps>
+  <Step title="Session Recaps">
+    When enabled, Jean generates AI summaries when you return to unfocused sessions.
+
+    Helps you quickly remember what a session was about.
+  </Step>
+
+  <Step title="Parallel Execution Prompt">
+    When enabled, Jean appends a system prompt encouraging Claude to use parallel subagents for faster execution.
+
+    **Trade-off**: More subagent spawning, higher token usage, faster completion.
+  </Step>
+
+  <Step title="Debug Mode">
+    When enabled, shows debug information in chat sessions (tool calls, thinking tokens, etc.).
+
+    **Useful for**: Understanding how Claude operates and debugging issues.
+  </Step>
+</Steps>
+
+## Notification Sounds
+
+<Steps>
+  <Step title="Waiting Sound">
+    Sound played when a session finishes and is waiting for your input.
+
+    Options: None (default), Ding, Chime, Pop, Choo-choo
+  </Step>
+
+  <Step title="Review Sound">
+    Sound played when a session finishes reviewing code.
+
+    Options: None (default), Ding, Chime, Pop, Choo-choo
+  </Step>
+</Steps>
+
+## HTTP Server (API Access)
+
+Jean includes an HTTP server for external integrations (e.g., webhooks, browser extensions).
+
+<Steps>
+  <Step title="Enable HTTP Server">
+    In Preferences → **Advanced** → **HTTP Server**, toggle **Enable HTTP Server**.
+  </Step>
+
+  <Step title="Configure Port">
+    Set the port (default: 3456).
+
+    The server listens on `http://localhost:<port>`.
+  </Step>
+
+  <Step title="Security Settings">
+    **Localhost Only**: When enabled, server only accepts connections from localhost (more secure).
+
+    **Token Required**: When enabled, all requests must include an `Authorization: Bearer <token>` header.
+
+    **Token**: Auto-generated token. Copy and use in external tools.
+  </Step>
+
+  <Step title="Auto-Start">
+    Enable **Auto-start on launch** to start the server when Jean opens.
+  </Step>
+</Steps>
+
+## Common Pitfalls
+
+<Warning>
+  **Keybinding Conflicts**: If you customize shortcuts, be careful not to override OS-level shortcuts (e.g., `Cmd+Q` for quit on Mac).
+
+  **Solution**: Test new shortcuts immediately after assigning them.
+</Warning>
+
+<Warning>
+  **Magic Prompt Syntax Errors**: If a customized prompt has invalid XML or missing variables, the magic command may fail.
+
+  **Solution**: Use **Reset to Default** and carefully re-apply your changes.
+</Warning>
+
+<Warning>
+  **High Polling Frequency**: Setting git/remote poll intervals too low can cause high CPU usage and API rate limits.
+
+  **Solution**: Use defaults (60s) unless you need real-time updates.
+</Warning>
+
+## Best Practices
+
+<Tip>
+  **Start with Defaults**: Don't customize everything at once. Use Jean for a week with defaults, then adjust what bothers you.
+</Tip>
+
+<Tip>
+  **Theme for Your Environment**: Use dark themes in low-light environments, light themes in bright offices. System theme auto-switches for you.
+</Tip>
+
+<Tip>
+  **Optimize for Your Workflow**: If you mostly fix bugs, customize the **Investigate Issue** prompt to focus on regression detection. If you mostly review PRs, customize the **Code Review** prompt to match your team's checklist.
+</Tip>
+
+<Tip>
+  **Use Lightweight Models for Simple Tasks**: Commit messages, release notes, and session naming don't need Opus. Save premium models for investigation and complex code changes.
+</Tip>
+
+## Next Steps
+
+- [Keyboard Shortcuts](/guides/keyboard-shortcuts) - Complete reference of all shortcuts
+- [Using Magic Commands](/guides/using-magic-commands) - Learn what each magic prompt does
+- [Setting Up Projects](/guides/setting-up-projects) - Per-project customization

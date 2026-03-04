@@ -1,80 +1,466 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get up and running with Jean in minutes - add your first project, create a worktree, and start your first AI chat session
 ---
 
-## Get started in three steps
+# Quickstart Guide
 
-Get your documentation site running locally and make your first customization.
+This guide will walk you through your first session with Jean - from adding a project to running your first AI-assisted chat.
 
-### Step 1: Set up your local environment
+## Step 1: Add Your First Project
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+<Steps>
+  <Step title="Open the Add Project Dialog">
+    Click the **Add Project** button in the sidebar, or use the keyboard shortcut:
 
-### Step 2: Deploy your changes
+    - macOS: `Cmd+N`
+    - Windows/Linux: `Ctrl+N`
+  </Step>
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+  <Step title="Select a Git Repository">
+    Click **Browse** and navigate to an existing git repository on your machine.
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    <Note>
+    The repository must be initialized with git and have at least one commit. Jean will detect the default branch automatically.
+    </Note>
+  </Step>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+  <Step title="Configure Project Settings">
+    **Project Name**: Auto-detected from the repository directory name (can be customized)
 
-### Step 3: Go live
+    **Default Branch**: Auto-detected (usually `main` or `master`)
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    **Worktrees Location** (optional): By default, worktrees are created in `~/jean/<project-name>/`. You can customize this to any directory.
 
-## Next steps
+    **Custom Avatar** (optional): Upload a custom image to identify your project visually
+  </Step>
 
-Now that you have your docs running, explore these key features:
+  <Step title="Save the Project">
+    Click **Add Project**. Your project will appear in the sidebar.
+
+    <Tip>
+    You can organize projects into folders by right-clicking the sidebar and selecting **New Folder**.
+    </Tip>
+  </Step>
+</Steps>
+
+## Step 2: Create Your First Worktree
+
+Worktrees are isolated git branches in separate directories, allowing you to work on multiple features simultaneously.
+
+<Steps>
+  <Step title="Open Worktree Creation">
+    Click your project in the sidebar, then click **New Worktree** or press:
+
+    - macOS: `Cmd+Shift+N`
+    - Windows/Linux: `Ctrl+Shift+N`
+  </Step>
+
+  <Step title="Choose a Creation Method">
+    Jean offers several ways to create worktrees:
+
+    <Tabs>
+      <Tab title="Quick Create">
+        Just click **Create** for a randomly-named worktree (e.g., `fuzzy-tiger-a3x9`)
+
+        ```
+        ~/jean/my-project/fuzzy-tiger-a3x9/
+        ```
+      </Tab>
+
+      <Tab title="From GitHub Issue">
+        1. Enter an issue number or URL: `#123` or `https://github.com/owner/repo/issues/123`
+        2. Jean loads the issue context and suggests a branch name
+        3. The issue context is automatically saved for AI investigation
+
+        <Note>
+        Requires GitHub CLI (`gh`) to be installed and authenticated.
+        </Note>
+      </Tab>
+
+      <Tab title="From Pull Request">
+        1. Enter a PR number or URL: `#456` or `https://github.com/owner/repo/pull/456`
+        2. Jean checks out the PR's head branch as a worktree
+        3. Perfect for reviewing or testing PRs in isolation
+      </Tab>
+
+      <Tab title="Custom Name">
+        Enter a custom branch name following git branch naming conventions:
+
+        - Use lowercase letters, numbers, hyphens, and slashes
+        - Example: `feature/user-authentication`
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Configure Advanced Options (Optional)">
+    <Accordion title="Setup Script">
+      Automatically run commands after worktree creation:
+
+      ```bash
+      npm install
+      npm run build
+      ```
+
+      The output is captured and displayed in the worktree details.
+    </Accordion>
+
+    <Accordion title="Auto-pull Base Branch">
+      Enable in Settings to automatically `git pull` the base branch before creating worktrees. Ensures you're always working from the latest code.
+    </Accordion>
+  </Step>
+
+  <Step title="Wait for Creation">
+    Jean creates the worktree in the background:
+
+    1. Creates a new git branch from your default branch
+    2. Checks out the branch in a new directory
+    3. Runs setup script (if configured)
+    4. Indexes files for AI context
+
+    <Note>
+    Large repositories may take a few seconds to index. Jean shows progress in the sidebar.
+    </Note>
+  </Step>
+</Steps>
+
+## Step 3: Start Your First Chat Session
+
+<Steps>
+  <Step title="Open the Worktree">
+    Click your newly created worktree in the sidebar. The chat interface opens automatically.
+  </Step>
+
+  <Step title="Configure Session Settings">
+    Before sending your first message, review the toolbar settings:
+
+    **Model Selection**:
+    - **Claude Opus 4.6**: Most capable, best for complex tasks
+    - **Claude Sonnet 4.6**: Balanced performance and cost (default)
+    - **Claude Haiku 4**: Fastest, best for simple tasks
+
+    **Execution Mode**:
+    - **Plan**: Read-only mode (Claude can't modify files)
+    - **Build**: Auto-approve file edits (you approve other actions)
+    - **Yolo**: Auto-approve everything (use with caution!)
+
+    **Thinking Level** (Claude CLI):
+    - **Off**: No thinking tokens
+    - **Think**: 4K token budget
+    - **Megathink**: 10K budget
+    - **Ultrathink**: 32K budget (default)
+
+    <Tip>
+    Start with **Sonnet** in **Plan** mode with **Ultrathink** for safe exploration.
+    </Tip>
+  </Step>
+
+  <Step title="Send Your First Message">
+    Try one of these example prompts:
+
+    <CodeGroup>
+      ```plaintext Explore Codebase
+      Give me an overview of this project's architecture. What are the main components and how do they interact?
+      ```
+
+      ```plaintext Fix a Bug
+      Find and fix the bug causing [describe the issue]. First investigate the relevant code, then propose a solution.
+      ```
+
+      ```plaintext Add a Feature
+      I need to add [feature description]. Can you help me design and implement it?
+      ```
+
+      ```plaintext Code Review
+      Review the changes I've made in this worktree. Are there any issues with code quality, bugs, or improvements I should make?
+      ```
+    </CodeGroup>
+
+    Press `Enter` to send (or `Shift+Enter` for new line).
+  </Step>
+
+  <Step title="Interact with AI Responses">
+    As Claude responds, you'll see:
+
+    - **Text responses**: Claude's explanation and reasoning
+    - **Tool calls**: File reads, edits, bash commands, etc.
+    - **Thinking blocks**: Claude's internal reasoning (if enabled)
+
+    In **Plan** mode, Claude will ask permission for actions:
+
+    - **Approve Plan**: Execute the proposed plan (switches to **Build** mode)
+    - **Reject**: Provide feedback and iterate
+
+    <Warning>
+    In **Build** or **Yolo** mode, file changes are applied immediately. Always review changes with the diff viewer.
+    </Warning>
+  </Step>
+</Steps>
+
+## Step 4: Review and Commit Changes
+
+<Steps>
+  <Step title="View Changes">
+    Click the **Git Status** tab to see modified files.
+
+    Click any file to open the diff viewer:
+    - **Unified view**: Traditional diff format
+    - **Side-by-side view**: Compare old and new versions
+  </Step>
+
+  <Step title="Generate a Commit Message">
+    Click the **Commit** button in the Git Status panel.
+
+    Jean can generate a semantic commit message:
+
+    1. Click **Generate Message**
+    2. AI analyzes your changes
+    3. Generates a conventional commit message
+
+    Or write your own and click **Commit**.
+  </Step>
+
+  <Step title="Create a Pull Request">
+    Click **Create PR** in the toolbar.
+
+    Jean can auto-generate PR content:
+
+    1. Click **Generate Content**
+    2. AI analyzes commits and changes
+    3. Generates title and description
+    4. Creates PR on GitHub
+
+    The PR is linked to your worktree and tracked in the sidebar.
+  </Step>
+</Steps>
+
+## Essential Keyboard Shortcuts
+
+Jean is designed for keyboard-driven workflows:
 
 <CardGroup cols={2}>
+  <Card title="Navigation" icon="keyboard">
+    - `Cmd/Ctrl+K`: Command palette
+    - `Cmd/Ctrl+P`: Switch projects
+    - `Cmd/Ctrl+O`: Switch worktrees
+    - `Cmd/Ctrl+1-9`: Switch sessions
+  </Card>
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+  <Card title="Actions" icon="bolt">
+    - `Cmd/Ctrl+N`: New project
+    - `Cmd/Ctrl+Shift+N`: New worktree
+    - `Cmd/Ctrl+Enter`: Send message
+    - `Esc`: Cancel streaming response
+  </Card>
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+  <Card title="Session Control" icon="sliders">
+    - `Tab`: Cycle execution mode forward
+    - `Shift+Tab`: Cycle execution mode backward
+    - `Cmd/Ctrl+R`: Run plan (in Plan mode)
+    - `Cmd/Ctrl+/`: Toggle sidebar
+  </Card>
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="View Control" icon="eye">
+    - `Cmd/Ctrl+B`: Toggle file browser
+    - `Cmd/Ctrl+G`: Toggle git status
+    - `Cmd/Ctrl+T`: Toggle terminal
+    - `Cmd/Ctrl+,`: Open settings
+  </Card>
 </CardGroup>
 
+<Tip>
+Press `Cmd/Ctrl+K` to open the command palette and discover all available commands.
+</Tip>
+
+## Using Magic Commands
+
+Magic commands are AI-powered shortcuts for common workflows:
+
+<Tabs>
+  <Tab title="Investigate Issue">
+    When you create a worktree from a GitHub issue, use:
+
+    ```plaintext
+    /investigate
+    ```
+
+    Jean automatically:
+    1. Loads the issue context
+    2. Analyzes the problem
+    3. Explores the codebase
+    4. Proposes a solution
+  </Tab>
+
+  <Tab title="Code Review">
+    Click **Review** in the toolbar to run an AI code review:
+
+    1. AI analyzes all uncommitted changes
+    2. Identifies issues (bugs, style, performance)
+    3. Displays findings with severity levels
+    4. Track fixes as you address them
+  </Tab>
+
+  <Tab title="Merge Conflicts">
+    When you encounter merge conflicts:
+
+    ```plaintext
+    /resolve-conflicts
+    ```
+
+    Jean helps you:
+    1. Understand the conflicting changes
+    2. Determine the correct resolution
+    3. Apply the fix
+  </Tab>
+
+  <Tab title="Session Recap">
+    When returning to a session after a while, click **Recap** to get an AI-generated summary of:
+
+    - What was discussed
+    - Actions taken
+    - Current state
+    - Next steps
+  </Tab>
+</Tabs>
+
+## Working with Multiple Sessions
+
+One of Jean's most powerful features is managing multiple parallel sessions:
+
+<Steps>
+  <Step title="Create a New Session">
+    Click the **+** button next to the session list, or press `Cmd/Ctrl+Shift+T`
+
+    Each session has:
+    - Independent chat history
+    - Separate AI context
+    - Own execution mode settings
+  </Step>
+
+  <Step title="Switch Between Sessions">
+    - Click session tabs at the top
+    - Use `Cmd/Ctrl+1` through `Cmd/Ctrl+9` for quick switching
+    - Arrow keys when focused on session tabs
+  </Step>
+
+  <Step title="Organize with Canvas View">
+    Click the **Canvas** button to see all sessions in a grid:
+
+    - Visual overview of all sessions
+    - Quick navigation with arrow keys
+    - See session status at a glance (active, waiting, completed)
+  </Step>
+
+  <Step title="Archive Completed Sessions">
+    Right-click a session and select **Archive** to clean up your workspace.
+
+    Archived sessions are preserved and can be restored later.
+  </Step>
+</Steps>
+
+## Next Steps
+
+Now that you've completed your first session, explore more features:
+
+<CardGroup cols={2}>
+  <Card title="Core Concepts" icon="book" href="/core/projects-and-worktrees">
+    Understand projects, worktrees, and sessions
+  </Card>
+
+  <Card title="Project Management" icon="folder" href="/features/project-management">
+    Learn advanced project organization
+  </Card>
+
+  <Card title="Magic Commands" icon="wand-magic-sparkles" href="/features/magic-commands">
+    Master AI-powered automation
+  </Card>
+
+  <Card title="GitHub Integration" icon="github" href="/features/github-integration">
+    Connect issues, PRs, and workflows
+  </Card>
+
+  <Card title="Keyboard Shortcuts" icon="keyboard" href="/reference/keyboard-shortcuts">
+    Full keyboard shortcut reference
+  </Card>
+
+  <Card title="Customization" icon="palette" href="/guides/customization">
+    Personalize Jean to your workflow
+  </Card>
+</CardGroup>
+
+## Common Workflows
+
+<AccordionGroup>
+  <Accordion title="Feature Development Workflow" icon="code-branch">
+    1. Create worktree from GitHub issue
+    2. Use `/investigate` to understand requirements
+    3. Start in **Plan** mode to design solution
+    4. Switch to **Build** mode to implement
+    5. Use **Review** to check code quality
+    6. Generate commit message and commit
+    7. Create PR with auto-generated content
+    8. Archive worktree when PR is merged
+  </Accordion>
+
+  <Accordion title="Bug Fix Workflow" icon="bug">
+    1. Create worktree from bug report issue
+    2. Investigate the bug in **Plan** mode
+    3. Reproduce the issue
+    4. Fix in **Build** mode
+    5. Test the fix
+    6. Create commit and PR
+    7. Link PR to original issue
+  </Accordion>
+
+  <Accordion title="PR Review Workflow" icon="code-pull-request">
+    1. Create worktree from PR number
+    2. Run local tests
+    3. Use **Review** to find issues
+    4. Add comments to PR via GitHub
+    5. Request changes or approve
+    6. Archive worktree after review
+  </Accordion>
+
+  <Accordion title="Experimentation Workflow" icon="flask">
+    1. Create quick worktree with random name
+    2. Start in **Yolo** mode for rapid iteration
+    3. Try different approaches
+    4. Delete worktree if experiment fails
+    5. Or commit and create PR if successful
+  </Accordion>
+</AccordionGroup>
+
+## Tips for Success
+
+<Warning>
+**Start with Plan Mode**: Always begin in Plan mode until you trust Claude's proposed changes. Review file diffs carefully.
+</Warning>
+
+<Tip>
+**Use Multiple Sessions**: Don't cram everything into one chat. Create focused sessions for:
+- Investigation
+- Implementation
+- Testing
+- Documentation
+</Tip>
+
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+**Context Management**: Claude has context limits. Use saved contexts and session recaps to manage long conversations.
 </Note>
+
+<Tip>
+**Keyboard Shortcuts**: Learning the keyboard shortcuts will 10x your productivity. Start with `Cmd/Ctrl+K` command palette.
+</Tip>
+
+## Getting Help
+
+If you run into issues:
+
+- **Documentation**: Browse the guides and reference sections
+- **GitHub Issues**: [github.com/coollabsio/jean/issues](https://github.com/coollabsio/jean/issues)
+- **Command Palette**: Press `Cmd/Ctrl+K` to search all commands
+- **Tooltips**: Hover over UI elements for contextual help
+
+<Card title="Join the Community" icon="users" href="https://github.com/coollabsio/jean">
+  Star us on GitHub and contribute to the project
+</Card>

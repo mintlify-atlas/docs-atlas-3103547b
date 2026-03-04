@@ -1,0 +1,513 @@
+---
+title: 'Remote Web Access'
+description: 'Access Jean remotely via HTTP server and WebSocket API'
+---
+
+## Overview
+
+Jean includes a built-in HTTP server with WebSocket support, allowing you to access the full Jean interface from any web browser on your network. This is useful for:
+
+- Accessing Jean from tablets or phones
+- Working from multiple machines without syncing
+- Remote development scenarios
+- Team collaboration (experimental)
+
+## Enabling HTTP Server
+
+### Via Preferences
+
+1. Open **Preferences** (`Cmd/Ctrl + ,`)
+2. Navigate to **Remote Access** tab
+3. Configure server settings:
+   - **Enable HTTP Server**: Toggle on
+   - **Port**: Default `3456` (change if needed)
+   - **Auto-start**: Launch server on app startup
+   - **Localhost Only**: Bind to `127.0.0.1` (more secure)
+4. Click **Start Server**
+
+### Server Status
+
+When running, you'll see:
+
+```
+Server running at: http://192.168.1.100:3456
+Token: abc123xyz456...
+```
+
+## Authentication
+
+### Token-Based Auth
+
+Jean uses bearer token authentication for HTTP/WebSocket access:
+
+**Token Requirements**:
+- Auto-generated on first server start
+- Stored in preferences (`http_server_token`)
+- Required by default (`http_server_token_required: true`)
+
+**Disabling Auth** (not recommended):
+1. Preferences > Remote Access
+2. Uncheck **Require Token**
+3. Restart server
+
+### Using the Token
+
+**URL with token**:
+```
+http://192.168.1.100:3456/?token=abc123xyz456...
+```
+
+**WebSocket connection**:
+```javascript
+const ws = new WebSocket('ws://192.168.1.100:3456/ws?token=abc123xyz456...');
+```
+
+**API requests**:
+```bash
+curl http://192.168.1.100:3456/api/init?token=abc123xyz456...
+```
+
+## API Endpoints
+
+### `/api/auth`
+
+Validate authentication token.
+
+**Method**: `GET`
+
+**Query params**:
+- `token` - Auth token (optional if `token_required: false`)
+
+**Response**:
+```json
+{
+  "ok": true,
+  "token_required": true
+}
+```
+
+**Error**:
+```json
+{
+  "ok": false,
+  "error": "Invalid token"
+}
+```
+
+### `/api/init`
+
+Get initial application state (projects, worktrees, sessions, preferences).
+
+**Method**: `GET`
+
+**Query params**:
+- `token` - Auth token
+
+**Response**:
+```json
+{
+  "projects": [...],
+  "worktreesByProject": {
+    "project-id": [...]
+  },
+  "sessionsByWorktree": {
+    "worktree-id": {...}
+  },
+  "activeSessions": {
+    "session-id": {...}
+  },
+  "preferences": {...},
+  "uiState": {...}
+}
+```
+
+**Used by**: Web frontend to preload data before WebSocket connects.
+
+### `/ws`
+
+WebSocket endpoint for real-time bidirectional communication.
+
+**Protocol**: WebSocket
+
+**Query params**:
+- `token` - Auth token
+
+**Connection**:
+```javascript
+const ws = new WebSocket('ws://localhost:3456/ws?token=abc123...');
+```
+
+## WebSocket Protocol
+
+### Message Types
+
+#### Client → Server: Invoke Command
+
+```json
+{
+  "id": "unique-request-id",
+  "command": "command_name",
+  "args": {
+    "param1": "value1",
+    "param2": "value2"
+  }
+}
+```
+
+#### Server → Client: Response
+
+**Success**:
+```json
+{
+  "type": "response",
+  "id": "unique-request-id",
+  "data": {...}
+}
+```
+
+**Error**:
+```json
+{
+  "type": "error",
+  "id": "unique-request-id",
+  "error": "Error message"
+}
+```
+
+#### Server → Client: Event Broadcast
+
+```json
+{
+  "type": "event",
+  "event": "event-name",
+  "payload": {...}
+}
+```
+
+### Available Commands
+
+All Tauri commands are available via WebSocket. Examples:
+
+**List projects**:
+```json
+{
+  "id": "1",
+  "command": "list_projects",
+  "args": {}
+}
+```
+
+**Create worktree**:
+```json
+{
+  "id": "2",
+  "command": "create_worktree",
+  "args": {
+    "projectId": "abc-123",
+    "name": "feature-branch"
+  }
+}
+```
+
+**Send message**:
+```json
+{
+  "id": "3",
+  "command": "send_message",
+  "args": {
+    "sessionId": "session-123",
+    "worktreePath": "/path/to/worktree",
+    "content": "Hello AI",
+    "backend": "claude",
+    "model": "opus"
+  }
+}
+```
+
+### Event Examples
+
+**Worktree created**:
+```json
+{
+  "type": "event",
+  "event": "worktree-created",
+  "payload": {
+    "worktree": {...}
+  }
+}
+```
+
+**Message received**:
+```json
+{
+  "type": "event",
+  "event": "message-received",
+  "payload": {
+    "sessionId": "session-123",
+    "message": {...}
+  }
+}
+```
+
+**Status update**:
+```json
+{
+  "type": "event",
+  "event": "git-status-updated",
+  "payload": {
+    "worktreeId": "worktree-123",
+    "status": {...}
+  }
+}
+```
+
+## Network Configuration
+
+### Localhost Only (Default)
+
+Binds to `127.0.0.1` - only accessible from the same machine.
+
+**Use when**:
+- Testing locally
+- Security is critical
+- No need for remote access
+
+### LAN Access
+
+Binds to `0.0.0.0` - accessible from any device on your network.
+
+**Use when**:
+- Accessing from phone/tablet
+- Multiple development machines
+- Team collaboration
+
+**Enable**:
+1. Preferences > Remote Access
+2. Uncheck **Localhost Only**
+3. Restart server
+
+**Access via**:
+```
+http://[your-lan-ip]:3456?token=...
+```
+
+Find your LAN IP:
+```bash
+# macOS/Linux
+ifconfig | grep "inet "
+
+# Windows
+ipconfig
+```
+
+### Port Forwarding
+
+For internet access (advanced):
+
+1. Configure router port forwarding: `External:3456 → Internal:[your-ip]:3456`
+2. Use dynamic DNS service for stable hostname
+3. Access via: `http://[your-ddns-hostname]:3456?token=...`
+
+**Security warning**: Only do this with strong token authentication enabled.
+
+## Security Best Practices
+
+### Token Management
+
+- **Never share tokens**: Tokens grant full access to Jean
+- **Rotate regularly**: Generate new token if compromised
+- **Use HTTPS**: Set up reverse proxy with SSL for production
+- **Strong tokens**: Default tokens are 32 bytes (secure)
+
+### Network Security
+
+- **Firewall rules**: Restrict port access to trusted IPs
+- **VPN recommended**: Use VPN instead of exposing to internet
+- **Monitor access**: Check logs for unexpected connections
+- **Localhost first**: Start with localhost-only, enable LAN only when needed
+
+### CORS Configuration
+
+Jean's HTTP server uses permissive CORS (`allow_origin: Any`).
+
+For production, use a reverse proxy to restrict origins:
+
+**nginx example**:
+```nginx
+server {
+    listen 443 ssl;
+    server_name jean.yourdomain.com;
+
+    location / {
+        proxy_pass http://localhost:3456;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        
+        # Restrict CORS
+        add_header Access-Control-Allow-Origin "https://trusted-origin.com";
+    }
+}
+```
+
+## Static File Serving
+
+The HTTP server serves the Jean web frontend from:
+
+**Development**:
+- `../dist/` (relative to Tauri manifest)
+
+**Production**:
+- Bundled resources (via Tauri resource config)
+- `dist/` relative to executable
+
+**Fallback**: All routes serve `index.html` (SPA routing)
+
+## WebSocket Broadcast System
+
+Jean uses a broadcast channel to push events to all connected WebSocket clients:
+
+**Architecture**:
+1. Tauri emits event: `app.emit("event-name", payload)`
+2. HTTP server intercepts via `WsBroadcaster`
+3. Event serialized to JSON
+4. Broadcast to all WS clients
+
+**Implementation**:
+```rust
+pub struct WsBroadcaster {
+    tx: broadcast::Sender<WsEvent>,
+}
+
+impl WsBroadcaster {
+    pub fn subscribe(&self) -> broadcast::Receiver<WsEvent> {
+        self.tx.subscribe()
+    }
+}
+```
+
+**Extension trait**:
+```rust
+trait BroadcastExt {
+    fn emit_and_broadcast(&self, event: &str, payload: impl Serialize);
+}
+```
+
+## Troubleshooting
+
+### Port Already in Use
+
+```
+Failed to bind to port 3456: address already in use
+```
+
+**Solution**: Change port in Preferences > Remote Access > Port
+
+### Cannot Connect from Other Device
+
+1. Verify server is running: Check Preferences > Remote Access
+2. Disable "Localhost Only" if accessing from another device
+3. Check firewall: Allow port 3456
+4. Verify LAN IP: Use `ifconfig`/`ipconfig` to confirm
+5. Test locally first: Visit `http://localhost:3456?token=...`
+
+### WebSocket Disconnects Frequently
+
+- Check network stability
+- Increase WebSocket timeout
+- Monitor for "lagged" warnings in logs (client too slow)
+
+### 401 Unauthorized
+
+- Verify token is correct
+- Check `token_required` setting
+- Generate new token if old one expired/corrupted
+
+## Performance Considerations
+
+- **Multiple clients**: Each WebSocket client receives all events
+- **Event throttling**: Not currently implemented (may lag slow clients)
+- **Max clients**: No hard limit (resource-dependent)
+- **Message queuing**: 256-message buffer per client
+
+## Example: Web Client
+
+```javascript
+class JeanClient {
+  constructor(host, token) {
+    this.host = host;
+    this.token = token;
+    this.ws = null;
+    this.callbacks = new Map();
+    this.eventHandlers = new Map();
+  }
+
+  async connect() {
+    // Validate token first
+    const authResp = await fetch(
+      `${this.host}/api/auth?token=${this.token}`
+    );
+    const authData = await authResp.json();
+    if (!authData.ok) throw new Error('Invalid token');
+
+    // Load initial data
+    const initResp = await fetch(
+      `${this.host}/api/init?token=${this.token}`
+    );
+    const initData = await initResp.json();
+    console.log('Initial data:', initData);
+
+    // Connect WebSocket
+    this.ws = new WebSocket(
+      `ws://${this.host.replace('http://', '')}/ws?token=${this.token}`
+    );
+
+    this.ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      
+      if (msg.type === 'response' || msg.type === 'error') {
+        const cb = this.callbacks.get(msg.id);
+        if (cb) {
+          cb(msg);
+          this.callbacks.delete(msg.id);
+        }
+      } else if (msg.type === 'event') {
+        const handler = this.eventHandlers.get(msg.event);
+        if (handler) handler(msg.payload);
+      }
+    };
+  }
+
+  invoke(command, args = {}) {
+    return new Promise((resolve, reject) => {
+      const id = Math.random().toString(36);
+      this.callbacks.set(id, (msg) => {
+        if (msg.type === 'error') {
+          reject(new Error(msg.error));
+        } else {
+          resolve(msg.data);
+        }
+      });
+      this.ws.send(JSON.stringify({ id, command, args }));
+    });
+  }
+
+  on(event, handler) {
+    this.eventHandlers.set(event, handler);
+  }
+}
+
+// Usage
+const client = new JeanClient('http://localhost:3456', 'your-token');
+await client.connect();
+
+// Listen for events
+client.on('worktree-created', (worktree) => {
+  console.log('New worktree:', worktree);
+});
+
+// Invoke commands
+const projects = await client.invoke('list_projects');
+console.log('Projects:', projects);
+```

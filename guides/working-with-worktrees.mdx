@@ -1,0 +1,311 @@
+---
+title: Working with Worktrees
+description: Create, switch, merge, and clean up git worktrees
+---
+
+## Overview
+
+Worktrees in Jean are isolated git branches, each with their own working directory. They let you work on multiple features simultaneously without constant branch switching and stashing.
+
+**Key concepts:**
+- Each worktree is a separate directory with its own branch
+- Worktrees are named with random friendly names (e.g., `fuzzy-tiger`, `happy-cloud`)
+- Each worktree contains chat sessions tracking your AI conversations
+- Worktrees can be linked to GitHub PRs and issues
+
+## Creating a New Worktree
+
+<Steps>
+  <Step title="Start Worktree Creation">
+    With a project selected, press `Cmd+N` (Mac) or `Ctrl+N` (Windows/Linux).
+
+    Alternatively, click the **"+"** button next to the project name in the sidebar.
+  </Step>
+
+  <Step title="Choose Creation Method">
+    You have several options:
+
+    **Empty Worktree**: Creates a clean worktree from the default branch
+
+    **From Issue**: Creates a worktree linked to a GitHub issue. Jean will:
+    - Generate a branch name from the issue title
+    - Create the worktree
+    - Start a chat session with the issue context loaded
+
+    **From Pull Request**: Checks out an existing PR as a worktree for review or continuation
+
+    **From Branch**: Creates a worktree from an existing local or remote branch
+  </Step>
+
+  <Step title="Wait for Setup">
+    Jean will:
+    1. Pull the latest changes from the default branch (if auto-pull is enabled)
+    2. Create the git worktree and branch
+    3. Run the setup script from `jean.json` (if present)
+    4. Create an initial chat session
+
+    You'll see a loading indicator in the sidebar while this happens.
+  </Step>
+
+  <Step title="Start Working">
+    Once ready, the worktree appears in the sidebar under your project. Click it to open the chat interface.
+  </Step>
+</Steps>
+
+## Creating from GitHub Issues
+
+This is the most powerful worktree creation method for issue-driven development.
+
+<Steps>
+  <Step title="Open Magic Modal">
+    Press `Cmd+M` to open the Magic Commands modal.
+  </Step>
+
+  <Step title="Navigate to Issues Tab">
+    Click the **Issues** tab to see all open issues from your repository.
+  </Step>
+
+  <Step title="Select an Issue">
+    Browse the list and click on the issue you want to work on. You'll see:
+    - Issue title and number
+    - Description
+    - Comments
+    - Labels
+  </Step>
+
+  <Step title="Create Worktree">
+    Click **Investigate Issue**. Jean will:
+    1. Generate a branch name from the issue title (e.g., `fix-login-bug-123`)
+    2. Create the worktree
+    3. Save the issue context to a file in `.github/issues/`
+    4. Start a chat session with a prompt to investigate the issue
+    5. Store the issue number for later PR creation
+  </Step>
+
+  <Step title="Work on the Issue">
+    The AI assistant will analyze the issue, explore the codebase, and propose solutions. You can iterate in the chat to refine the approach.
+  </Step>
+</Steps>
+
+## Switching Between Worktrees
+
+<Steps>
+  <Step title="Click to Switch">
+    Click any worktree in the sidebar to switch to it. Jean will:
+    - Save the current chat session
+    - Load the selected worktree
+    - Show the most recent chat session (or the canvas view if multiple sessions exist)
+  </Step>
+
+  <Step title="Keyboard Navigation">
+    Use `Cmd+Alt+→` and `Cmd+Alt+←` to cycle through sessions within a worktree.
+
+    There's no built-in keyboard shortcut to switch worktrees, but you can use the Quick Menu (`Cmd+.`) and type the worktree name.
+  </Step>
+
+  <Step title="Restore Last Session">
+    Enable **Restore Last Session** in Preferences → General. When you switch projects, Jean will automatically return to the last worktree and session you were viewing.
+  </Step>
+</Steps>
+
+## Merging Worktrees
+
+Once your work is complete, you can merge the worktree back into the base branch.
+
+<Steps>
+  <Step title="Open Magic Modal">
+    With the worktree selected, press `Cmd+M`.
+  </Step>
+
+  <Step title="Select Merge Option">
+    Choose one of:
+    - **Merge**: Creates a merge commit (preserves full history)
+    - **Squash**: Combines all commits into one (cleaner history)
+    - **Rebase**: Replays commits on top of base branch (linear history)
+  </Step>
+
+  <Step title="Review Changes">
+    Jean will show:
+    - Files changed
+    - Commit count
+    - Diff summary
+
+    Verify the changes are correct before proceeding.
+  </Step>
+
+  <Step title="Confirm Merge">
+    Click **Merge**. Jean will:
+    1. Switch to the base branch
+    2. Perform the merge/squash/rebase
+    3. Push changes to remote (if configured)
+    4. Archive the worktree (if "Auto-archive on PR merged" is enabled)
+
+    <Warning>
+      If there are conflicts, Jean will stop and prompt you to resolve them. See [Handling Merge Conflicts](#handling-merge-conflicts) below.
+    </Warning>
+  </Step>
+</Steps>
+
+## Handling Merge Conflicts
+
+When merging produces conflicts, Jean provides AI-assisted resolution.
+
+<Steps>
+  <Step title="Detect Conflicts">
+    When a merge fails due to conflicts, Jean will:
+    - Show which files have conflicts
+    - Display the conflict diff with `<<<<<<<`, `=======`, and `>>>>>>>` markers
+  </Step>
+
+  <Step title="Open Resolve Conflicts">
+    In the Magic Modal, select **Resolve Conflicts**. Jean will:
+    1. Create a new chat session
+    2. Load the conflict diff as context
+    3. Send a prompt asking Claude to analyze and resolve each conflict
+  </Step>
+
+  <Step title="Review AI Suggestions">
+    Claude will:
+    - Explain what's conflicting in each file
+    - Recommend resolutions
+    - Provide commands to stage resolved files
+
+    You can ask follow-up questions or request alternative approaches.
+  </Step>
+
+  <Step title="Apply Resolutions">
+    Claude can directly edit the conflicted files to remove markers and merge changes. After each file is resolved, run:
+    ```bash
+    git add <file>
+    ```
+  </Step>
+
+  <Step title="Complete the Merge">
+    Once all conflicts are resolved and staged, run:
+    ```bash
+    git merge --continue
+    # or
+    git rebase --continue
+    # or
+    git cherry-pick --continue
+    ```
+
+    The merge operation completes and your worktree is clean.
+  </Step>
+</Steps>
+
+## Cleaning Up Worktrees
+
+You can archive or permanently delete worktrees when they're no longer needed.
+
+<Steps>
+  <Step title="Close the Worktree">
+    Press `Cmd+W` with the worktree selected, or right-click and select **Close**.
+  </Step>
+
+  <Step title="Choose Removal Behavior">
+    Depending on your Preferences → General → **Session Removal Behavior** setting:
+
+    **Archive** (default): Worktree is hidden but not deleted. You can restore it later via `Cmd+Shift+T`.
+
+    **Delete**: Worktree is permanently removed:
+    - Git worktree is deleted
+    - Branch is deleted locally and remotely (if pushed)
+    - All chat sessions are deleted
+    - Teardown script runs (if configured)
+  </Step>
+
+  <Step title="Restore Archived Worktrees">
+    Press `Cmd+Shift+T` to restore the most recently archived worktree.
+
+    Or right-click the project → **View Archived** to see all archived worktrees and restore specific ones.
+  </Step>
+</Steps>
+
+## Advanced: Auto-Pull Base Branch
+
+When enabled (Preferences → General), Jean automatically pulls the latest changes from the default branch before creating a new worktree.
+
+**Why this matters:**
+- Ensures new worktrees start from the latest code
+- Reduces merge conflicts later
+- Catches upstream changes early
+
+**Trade-off:**
+- Adds a few seconds to worktree creation
+- Requires network access
+
+<Tip>
+  Disable auto-pull if you work offline or want faster worktree creation. You can manually pull the base branch later with `Cmd+M` → **Pull**.
+</Tip>
+
+## Advanced: Teardown Scripts
+
+Just like setup scripts, you can define a teardown script in `jean.json` that runs when a worktree is deleted:
+
+```json
+{
+  "scripts": {
+    "setup": "bun install",
+    "teardown": "docker-compose down && rm -rf node_modules"
+  }
+}
+```
+
+**Use cases:**
+- Stop development servers
+- Clean up Docker containers
+- Remove large build artifacts
+- Free disk space
+
+## Common Pitfalls
+
+<Warning>
+  **Worktree Path Already Exists**: If you try to create a worktree with a name that already exists on disk, Jean will:
+  - Show an error dialog
+  - Suggest an alternative name (e.g., `fuzzy-tiger-2`)
+  - Offer to restore the archived worktree if it exists
+
+  **Solution**: Choose the suggested name or restore the existing worktree.
+</Warning>
+
+<Warning>
+  **Branch Already Exists**: If you try to create a worktree from an issue but the branch name already exists:
+  - Jean will suggest an alternative name with a numeric suffix
+  - The existing branch is NOT deleted or modified
+
+  **Solution**: Use the suggested name or manually delete the old branch first.
+</Warning>
+
+<Warning>
+  **Setup Script Fails**: If the setup script exits with a non-zero status:
+  - The worktree is still created (so you can debug)
+  - Setup output is saved and shown in the worktree logs
+  - The worktree status shows an error indicator
+
+  **Solution**: Click the worktree, open the logs tab, and review the error output. Fix the issue and manually run the setup commands.
+</Warning>
+
+## Best Practices
+
+<Tip>
+  **One Worktree per Feature**: Create separate worktrees for each feature, bug fix, or experiment. This keeps work isolated and easy to review.
+</Tip>
+
+<Tip>
+  **Archive Early, Archive Often**: Don't let unused worktrees pile up. Archive them when done to keep your sidebar clean. You can always restore them later.
+</Tip>
+
+<Tip>
+  **Link PRs Early**: If you're working on a feature that will become a PR, create the PR as soon as you have a first commit. Jean will track PR status and CI checks automatically.
+</Tip>
+
+<Tip>
+  **Use Descriptive Issue Titles**: When creating worktrees from issues, Jean generates branch names from issue titles. Clear titles → clear branch names.
+</Tip>
+
+## Next Steps
+
+- [Managing Sessions](/guides/managing-sessions) - Organize chat conversations within worktrees
+- [Using Magic Commands](/guides/using-magic-commands) - Create PRs, commits, and reviews
+- [GitHub Workflows](/guides/github-workflows) - Integrate with GitHub issues, PRs, and CI

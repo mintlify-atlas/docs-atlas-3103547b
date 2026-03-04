@@ -1,0 +1,376 @@
+---
+title: 'Custom Prompts'
+description: 'Customize AI prompts and system instructions in Jean'
+---
+
+## Overview
+
+Jean includes customizable "magic prompts" that power AI features like issue investigation, code review, and PR generation. You can modify these prompts to match your workflow and coding standards.
+
+## Available Magic Prompts
+
+### Investigation Prompts
+
+#### `investigate_issue`
+Prompt for investigating GitHub issues.
+
+**Default behavior**:
+1. Read issue context files
+2. Analyze problem (expected vs actual behavior)
+3. Explore codebase for relevant code
+4. Identify root cause
+5. Check for regressions
+6. Propose solution with specific files
+
+**Variables available**:
+- `{issueWord}` - "issue" or "issues" (plural)
+- `{issueRefs}` - Issue numbers (e.g., "#123")
+
+#### `investigate_pr`
+Prompt for investigating GitHub pull requests.
+
+**Default behavior**:
+1. Read PR context and reviews
+2. Understand changes and branches
+3. Analyze approach
+4. Security review (malicious code, backdoors, secrets)
+5. Identify action items from reviewers
+6. Propose next steps
+
+**Variables available**:
+- `{prWord}` - "PR" or "PRs" (plural)
+- `{prRefs}` - PR numbers (e.g., "#456")
+
+#### `investigate_workflow_run`
+Prompt for investigating failed GitHub Actions workflows.
+
+**Variables available**:
+- `{workflowName}` - Workflow name
+- `{branch}` - Branch name
+- `{displayTitle}` - Commit/PR title
+- `{runUrl}` - Workflow run URL
+- `{runId}` - Workflow run ID
+
+#### `investigate_security_alert`
+Prompt for investigating Dependabot vulnerability alerts.
+
+**Variables available**:
+- `{alertWord}` - "alert" or "alerts"
+- `{alertRefs}` - Alert identifiers
+
+#### `investigate_advisory`
+Prompt for investigating repository security advisories.
+
+**Variables available**:
+- `{advisoryWord}` - "advisory" or "advisories"
+- `{advisoryRefs}` - Advisory identifiers
+
+#### `investigate_linear_issue`
+Prompt for investigating Linear issues.
+
+**Variables available**:
+- `{linearWord}` - "issue" or "issues"
+- `{linearRefs}` - Linear issue IDs
+- `{linearContext}` - Full issue context (description + comments)
+
+### Generation Prompts
+
+#### `pr_content`
+Generates PR title and description from commits and diff.
+
+**Variables available**:
+- `{current_branch}` - Source branch
+- `{target_branch}` - Target branch
+- `{commit_count}` - Number of commits
+- `{context}` - Related context (issue, etc.)
+- `{commits}` - Commit history
+- `{diff}` - Full diff
+
+#### `commit_message`
+Generates commit message from staged changes.
+
+**Variables available**:
+- `{status}` - Git status output
+- `{diff}` - Staged diff
+- `{recent_commits}` - Recent commit messages
+- `{remote_info}` - Remote repository info
+
+#### `release_notes`
+Generates release notes from commits since last tag.
+
+**Variables available**:
+- `{tag}` - Previous release tag
+- `{previous_release_name}` - Previous release name
+- `{commits}` - Commits since tag
+
+#### `session_naming`
+Generates short session names from first user message.
+
+**Variables available**:
+- `{message}` - User's first message
+
+**Rules**:
+- Maximum 4-5 words
+- Sentence case (only capitalize first word)
+- No special characters
+- No generic names
+- No commit-style prefixes ("Add", "Fix", etc.)
+
+### Analysis Prompts
+
+#### `code_review`
+Provides structured code review feedback.
+
+**Variables available**:
+- `{branch_info}` - Current branch info
+- `{commits}` - Commit history
+- `{diff}` - Branch diff
+- `{uncommitted_section}` - Uncommitted changes section
+
+**Focus areas**:
+- Security & supply-chain risks
+- Performance issues
+- Code quality and maintainability
+- Potential bugs
+- Best practices violations
+
+#### `context_summary`
+Summarizes conversation for future context loading.
+
+**Variables available**:
+- `{project_name}` - Project name
+- `{date}` - Current date
+- `{conversation}` - Full conversation
+
+**Output format**:
+1. Main Goal
+2. Key Decisions & Rationale
+3. Trade-offs Considered
+4. Problems Solved
+5. Current State
+6. Unresolved Questions
+7. Key Files & Patterns
+8. Next Steps
+
+#### `session_recap`
+Generates brief session digest when returning to unfocused sessions.
+
+**Variables available**:
+- `{conversation}` - Conversation transcript
+
+**Output fields**:
+- `chat_summary` - One sentence (max 100 chars)
+- `last_action` - Last completed action (max 200 chars)
+
+### Workflow Prompts
+
+#### `resolve_conflicts`
+Guides through resolving git merge conflicts.
+
+**Appended to conflict resolution messages.**
+
+#### `global_system_prompt`
+Global system prompt appended to every chat session.
+
+**Similar to** `~/.claude/CLAUDE.md` for Claude CLI.
+
+**Default includes**:
+- Plan mode defaults
+- Subagent strategy
+- Self-improvement loop
+- Verification before done
+- Demand elegance
+- Autonomous bug fixing
+
+#### `parallel_execution`
+System prompt encouraging parallel sub-agent execution.
+
+**Applied when** `parallel_execution_prompt_enabled` is true in preferences.
+
+## Customizing Prompts
+
+### Via Preferences UI
+
+1. Open **Preferences** (`Cmd/Ctrl + ,`)
+2. Navigate to **Magic Prompts** tab
+3. Select prompt to customize
+4. Click **Edit** button
+5. Modify prompt text
+6. Click **Save**
+
+### Resetting to Defaults
+
+To restore original prompt:
+
+1. Open prompt editor
+2. Click **Reset to Default**
+3. Confirm reset
+
+### Prompt Customization Tips
+
+**Variables**: Use `{variable_name}` syntax for dynamic values
+
+**Structure**: Follow XML-like tags for clarity:
+```xml
+<task>Your main instruction</task>
+
+<instructions>
+1. Step one
+2. Step two
+</instructions>
+
+<guidelines>
+- Guideline one
+- Guideline two
+</guidelines>
+```
+
+**Output Format**: Specify desired output format:
+```xml
+<output_format>
+Respond with ONLY the raw JSON object:
+{"field": "value"}
+</output_format>
+```
+
+## Per-Prompt Model Overrides
+
+You can configure which AI model handles each prompt type:
+
+### Default Models (Claude)
+
+```typescript
+{
+  investigate_issue_model: 'opus',              // Heavy task
+  investigate_pr_model: 'opus',                 // Heavy task
+  investigate_workflow_run_model: 'opus',       // Heavy task
+  pr_content_model: 'haiku',                    // Light task
+  commit_message_model: 'haiku',                // Light task
+  code_review_model: 'haiku',                   // Light task
+  context_summary_model: 'opus',                // Heavy task
+  resolve_conflicts_model: 'opus',              // Heavy task
+  release_notes_model: 'haiku',                 // Light task
+  session_naming_model: 'haiku',                // Light task
+  session_recap_model: 'haiku',                 // Light task
+  investigate_security_alert_model: 'opus',     // Heavy task
+  investigate_advisory_model: 'opus',           // Heavy task
+  investigate_linear_issue_model: 'opus'        // Heavy task
+}
+```
+
+### Codex Preset
+
+```typescript
+{
+  investigate_issue_model: 'gpt-5.3-codex',
+  pr_content_model: 'gpt-5.1-codex-mini',
+  commit_message_model: 'gpt-5.1-codex-mini',
+  // ... (top model for heavy tasks, mini for light tasks)
+}
+```
+
+### Configuring Models
+
+1. Preferences > Magic Prompts
+2. Select prompt
+3. Choose **Model Override**
+4. Select model from dropdown
+5. Save changes
+
+## Per-Prompt Backend Overrides
+
+You can also specify which backend (Claude/Codex/OpenCode) handles each prompt:
+
+```typescript
+{
+  investigate_issue_backend: null,  // null = use project/global default
+  pr_content_backend: 'claude',     // Force Claude for PR content
+  code_review_backend: 'codex',     // Force Codex for reviews
+  // ...
+}
+```
+
+## Per-Prompt Provider Overrides
+
+For Claude CLI, you can override the provider (Anthropic/OpenRouter/etc.):
+
+```typescript
+{
+  investigate_issue_provider: null,        // null = use global default
+  commit_message_provider: 'OpenRouter',   // Use OpenRouter profile
+  // ...
+}
+```
+
+## Storage Location
+
+Custom prompts are stored in:
+
+```
+~/Library/Application Support/io.coollabs.jean/preferences.json
+```
+
+(Location varies by platform - see `~/.config/jean/` on Linux, `%APPDATA%\jean\` on Windows)
+
+## Example: Custom Code Review Prompt
+
+```xml
+<task>Review the following code changes and provide structured feedback</task>
+
+<branch_info>{branch_info}</branch_info>
+
+<commits>
+{commits}
+</commits>
+
+<diff>
+{diff}
+</diff>
+
+{uncommitted_section}
+
+<instructions>
+Focus on:
+- **Security**: Check for vulnerabilities, hardcoded secrets, injection risks
+- **Performance**: Identify bottlenecks, memory leaks, inefficient algorithms
+- **Code Quality**: Look for code smells, duplication, unclear naming
+- **Testing**: Assess test coverage and edge case handling
+- **Documentation**: Verify inline comments and docstrings
+
+Provide:
+1. Overall summary (2-3 sentences)
+2. Critical issues (must fix before merge)
+3. Suggestions (nice-to-have improvements)
+4. Praise (highlight good patterns)
+
+Be constructive and specific. Include file paths and line numbers.
+</instructions>
+
+<output_format>
+Use this structure:
+
+## Summary
+[Brief overview]
+
+## Critical Issues
+- [Issue 1 with file:line]
+- [Issue 2 with file:line]
+
+## Suggestions
+- [Suggestion 1]
+- [Suggestion 2]
+
+## Praise
+- [Good pattern 1]
+- [Good pattern 2]
+</output_format>
+```
+
+## Best Practices
+
+- **Test incrementally**: Make small changes and test before committing
+- **Keep structure**: Maintain XML-like structure for clarity
+- **Use variables**: Leverage provided variables instead of hardcoding
+- **Be specific**: Give clear, actionable instructions
+- **Include examples**: Show expected output format
+- **Version control**: Back up `preferences.json` before major changes

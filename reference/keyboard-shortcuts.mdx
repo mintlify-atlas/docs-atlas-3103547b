@@ -1,0 +1,322 @@
+---
+title: 'Keyboard Shortcuts'
+description: 'Complete keyboard shortcuts reference for Jean'
+---
+
+## Overview
+
+Jean includes extensive keyboard shortcuts for fast navigation and workflow control. All shortcuts are customizable in Preferences.
+
+## Notation
+
+- **`Cmd`** on macOS = **`Ctrl`** on Windows/Linux
+- **`Opt`** on macOS = **`Alt`** on Windows/Linux
+- **`Shift`**, **`Enter`**, **`Backspace`** are platform-independent
+
+## Default Keybindings
+
+### Navigation
+
+| Shortcut | Action | Description |
+|----------|--------|-------------|
+| **`Cmd+B`** | Toggle Left Sidebar | Show or hide projects sidebar |
+| **`Cmd+,`** | Open Preferences | Open preferences dialog |
+| **`Cmd+O`** | Open In... | Open worktree in editor/terminal/finder |
+| **`Cmd+N`** | New Worktree | Create new worktree in current project |
+| **`Cmd+Shift+T`** | Restore Archived | Restore most recently archived item |
+| **`/`** | Focus Canvas Search | Focus search input on canvas views |
+| **`Cmd+Shift+D`** | GitHub Dashboard | Open GitHub Dashboard (issues/PRs/security) |
+| **`Cmd+.`** | Quick Menu | Open floating quick menu |
+| **`Cmd+Shift+F`** | Finished Sessions | Open finished/unread sessions popover |
+
+### Chat
+
+| Shortcut | Action | Description |
+|----------|--------|-------------|
+| **`Cmd+L`** | Focus Chat Input | Move focus to chat textarea |
+| **`Cmd+T`** | New Session | Create new chat session |
+| **`Cmd+Opt+Right`** | Next Session | Switch to next chat session |
+| **`Cmd+Opt+Left`** | Previous Session | Switch to previous chat session |
+| **`Cmd+W`** | Close Session | Close session (or worktree if last session) |
+| **`Shift+Tab`** | Cycle Execution Mode | Cycle through Plan/Build/Yolo modes |
+| **`Cmd+Enter`** | Approve Plan | Approve current plan (plan mode) |
+| **`Cmd+Y`** | Approve Plan (YOLO) | Approve plan with YOLO mode |
+| **`Cmd+Shift+Y`** | Clear Context and Yolo | Approve, clear context, start new yolo session |
+| **`Cmd+Shift+Enter`** | Clear Context and Build | Approve, clear context, start new build session |
+| **`P`** | Open Plan | Open plan dialog for selected session |
+| **`R`** | Open Recap | Open session recap dialog |
+| **`` Cmd+` ``** | Toggle Terminal | Show or hide terminal panel |
+| **`Cmd+S`** | Toggle Label | Mark/unmark session with "Needs testing" label |
+| **`Cmd+Shift+P`** | Open Provider Dropdown | Open provider selector dropdown |
+| **`Cmd+Shift+M`** | Open Model Dropdown | Open model selector dropdown |
+| **`Cmd+Shift+E`** | Open Thinking Dropdown | Open thinking/effort level dropdown |
+| **`Cmd+Opt+Backspace`** | Cancel Prompt | Cancel running Claude process |
+| **`Cmd+Up`** | Scroll Chat Up | Scroll message list up by one page |
+| **`Cmd+Down`** | Scroll Chat Down | Scroll message list down by one page |
+
+### Git
+
+| Shortcut | Action | Description |
+|----------|--------|-------------|
+| **`Cmd+Shift+C`** | Open Commit Modal | Open git commit dialog |
+| **`Cmd+G`** | Open Git Diff | Open git diff view for uncommitted changes |
+| **`Cmd+M`** | Magic Commands | Open magic git commands menu |
+| **`Cmd+R`** | Execute Run | Start or stop run script in current workspace |
+
+## Customizing Shortcuts
+
+### Via Preferences
+
+1. Open **Preferences** (`Cmd+,`)
+2. Navigate to **Keyboard Shortcuts** tab
+3. Find action to customize
+4. Click on current shortcut
+5. Press new key combination
+6. Save changes
+
+### Shortcut Format
+
+Jean uses lowercase shortcut notation:
+
+```
+mod+shift+key
+```
+
+**Components**:
+- `mod` - Cmd (macOS) or Ctrl (Windows/Linux)
+- `shift` - Shift key
+- `alt` - Alt (Windows/Linux) or Option (macOS)
+- `key` - Letter, number, or special key
+
+**Examples**:
+- `mod+l` - Cmd+L / Ctrl+L
+- `mod+shift+c` - Cmd+Shift+C / Ctrl+Shift+C
+- `mod+alt+backspace` - Cmd+Opt+Backspace / Ctrl+Alt+Backspace
+
+### Special Keys
+
+```typescript
+comma      // ,
+period     // .
+slash      // /
+backquote  // `
+arrow up   // ↑
+arrowdown  // ↓
+arrowleft  // ←
+arrowright // →
+backspace  // Backspace/Delete
+enter      // Enter/Return
+tab        // Tab
+escape     // Esc
+```
+
+### Conflicts
+
+Jean warns if shortcut conflicts with:
+- Another Jean action
+- System shortcuts (Cmd+Q, Cmd+W, etc.)
+- Browser shortcuts (if running in web mode)
+
+**Resolution**: Change one of the conflicting shortcuts.
+
+## Context-Specific Shortcuts
+
+Some shortcuts only work in specific contexts:
+
+### Canvas Views Only
+
+- **`/`** - Focus search (only on canvas, not in chat)
+- **`P`** - Open plan (only when session card selected)
+- **`R`** - Open recap (only when session card selected)
+
+### Chat View Only
+
+- **`Cmd+L`** - Focus input (only in chat window)
+- **`Cmd+Enter`** - Approve plan (only when plan visible)
+- **`Shift+Tab`** - Cycle mode (only in chat input)
+
+### Terminal Panel
+
+- **`` Cmd+` ``** - Toggle terminal (works from anywhere)
+- Standard terminal shortcuts when focused (Cmd+C, Cmd+V, etc.)
+
+## Shortcut Categories
+
+Keybindings are grouped by category in Preferences:
+
+### Navigation (10 shortcuts)
+- Sidebar, preferences, open in, worktree creation, canvas search, etc.
+
+### Chat (18 shortcuts)
+- Focus input, sessions, execution modes, plan approval, model selection, etc.
+
+### Git (4 shortcuts)
+- Commit, diff, magic commands, run script
+
+## Disabled Shortcuts
+
+To disable a shortcut:
+
+1. Preferences > Keyboard Shortcuts
+2. Find action
+3. Click shortcut field
+4. Press **`Backspace`** to clear
+5. Save
+
+**Effect**: Action can only be triggered via UI (menu/button).
+
+## Platform Differences
+
+### macOS
+
+- **Cmd** = Command (⌘)
+- **Opt** = Option (⌥)
+- **Shift** = Shift (⇧)
+- Dead keys (Opt+E, Opt+M) avoided by using Cmd+Shift instead
+
+### Windows
+
+- **Ctrl** = Control
+- **Alt** = Alt
+- **Shift** = Shift
+- Terminal shortcuts: Cmd+` becomes Ctrl+`
+
+### Linux
+
+- **Ctrl** = Control
+- **Alt** = Alt
+- **Shift** = Shift
+- May conflict with desktop environment shortcuts (varies by distro)
+
+## Resetting Shortcuts
+
+### Reset All
+
+1. Preferences > Keyboard Shortcuts
+2. Click **Reset All to Defaults** button
+3. Confirm reset
+
+### Reset Single Shortcut
+
+1. Preferences > Keyboard Shortcuts
+2. Find action
+3. Click **Reset** icon next to shortcut
+4. Shortcut restored to default
+
+## Shortcut Migration
+
+Jean automatically migrates old shortcuts to new defaults:
+
+**Example**: `toggle_left_sidebar` changed from `Cmd+1` to `Cmd+B`
+
+- If you had default `Cmd+1`, auto-updates to `Cmd+B`
+- If you customized to `Cmd+X`, keeps `Cmd+X`
+
+Migrations happen silently on app load.
+
+## Shortcut Storage
+
+Shortcuts are stored in preferences:
+
+```json
+{
+  "keybindings": {
+    "focus_chat_input": "mod+l",
+    "toggle_left_sidebar": "mod+b",
+    "open_preferences": "mod+comma",
+    ...
+  }
+}
+```
+
+Location: `~/Library/Application Support/io.coollabs.jean/preferences.json`
+
+## Complete Keybindings Reference
+
+### Full List (37 shortcuts)
+
+```typescript
+export const DEFAULT_KEYBINDINGS: KeybindingsMap = {
+  focus_chat_input: 'mod+l',
+  toggle_left_sidebar: 'mod+b',
+  open_preferences: 'mod+comma',
+  open_commit_modal: 'mod+shift+c',
+  open_git_diff: 'mod+g',
+  execute_run: 'mod+r',
+  open_in_modal: 'mod+o',
+  open_magic_modal: 'mod+m',
+  new_session: 'mod+t',
+  next_session: 'mod+alt+arrowright',
+  previous_session: 'mod+alt+arrowleft',
+  close_session_or_worktree: 'mod+w',
+  new_worktree: 'mod+n',
+  cycle_execution_mode: 'shift+tab',
+  approve_plan: 'mod+enter',
+  approve_plan_yolo: 'mod+y',
+  approve_plan_clear_context: 'mod+shift+y',
+  approve_plan_clear_context_build: 'mod+shift+enter',
+  open_plan: 'p',
+  open_recap: 'r',
+  restore_last_archived: 'mod+shift+t',
+  focus_canvas_search: 'slash',
+  toggle_terminal: 'mod+backquote',
+  toggle_session_label: 'mod+s',
+  open_provider_dropdown: 'mod+shift+p',
+  open_model_dropdown: 'mod+shift+m',
+  open_thinking_dropdown: 'mod+shift+e',
+  open_unread_sessions: 'mod+shift+f',
+  cancel_prompt: 'mod+alt+backspace',
+  scroll_chat_up: 'mod+arrowup',
+  scroll_chat_down: 'mod+arrowdown',
+  open_github_dashboard: 'mod+shift+d',
+  open_quick_menu: 'mod+period',
+}
+```
+
+## Accessibility
+
+For users who prefer mouse/trackpad:
+
+1. Preferences > Appearance
+2. Enable **Show Keybinding Hints**
+3. Shortcuts displayed at bottom of canvas views
+
+For users who need alternative shortcuts:
+
+1. Customize any shortcut to avoid conflicts
+2. Use one-handed shortcuts (avoid multi-key combos)
+3. Map to number pad keys if available
+
+## Tips
+
+- **Learn incrementally**: Master 5-10 shortcuts first, add more over time
+- **Print cheat sheet**: Screenshot this page, keep visible while learning
+- **Use hints**: Enable keybinding hints in Preferences
+- **Muscle memory**: Practice shortcuts daily for 1-2 weeks
+- **Customize for you**: Change shortcuts to match your mental model
+
+## Troubleshooting
+
+### Shortcut Not Working
+
+1. Check focus: Some shortcuts require specific focus (e.g., chat input)
+2. Verify enabled: Check Preferences > Keyboard Shortcuts
+3. Check conflicts: Look for system/browser conflicts
+4. Restart Jean: Reload keybindings
+
+### Wrong Action Triggered
+
+1. Check for duplicates: Multiple actions with same shortcut
+2. Reset to defaults: Preferences > Reset All
+3. Manually review: Check preferences.json for conflicts
+
+### Platform-Specific Issues
+
+**macOS dead keys**: Opt+E, Opt+M type accents instead of triggering shortcuts
+- Solution: Use Cmd+Shift+E, Cmd+Shift+M instead
+
+**Windows terminal conflict**: Ctrl+` may conflict with terminal emulators
+- Solution: Customize toggle_terminal shortcut
+
+**Linux desktop conflicts**: Ctrl+Alt+Arrow may switch workspaces
+- Solution: Customize prev/next session shortcuts

@@ -1,0 +1,328 @@
+---
+title: Managing Sessions
+description: Create, organize, archive, and recover chat sessions
+---
+
+## Overview
+
+Sessions in Jean are individual AI chat conversations within a worktree. Each worktree can have multiple sessions, letting you organize work by task, context, or experiment.
+
+**Key concepts:**
+- Sessions are isolated conversations with their own message history
+- Each session has its own model, provider, and settings
+- Sessions can be labeled, archived, and restored
+- The canvas view shows all sessions in a worktree at once
+
+## Creating Sessions
+
+<Steps>
+  <Step title="New Session in Current Worktree">
+    Press `Cmd+T` (Mac) or `Ctrl+T` (Windows/Linux) to create a new session in the active worktree.
+
+    Alternatively, click the **"+"** button in the chat toolbar.
+  </Step>
+
+  <Step title="Choose Model and Settings">
+    A new session starts with:
+    - The default model for the project (or global default)
+    - No message history
+    - A random generated name (if auto-naming is enabled)
+
+    You can change the model/backend at any time using the dropdowns in the toolbar.
+  </Step>
+
+  <Step title="Start Chatting">
+    Type your first message in the chat input. If auto-naming is enabled, Jean will:
+    - Send your message to a lightweight model (Haiku)
+    - Generate a descriptive 4-5 word name
+    - Update the session name in the sidebar
+
+    <Tip>
+      Disable auto-naming in Preferences → General if you prefer to name sessions manually.
+    </Tip>
+  </Step>
+</Steps>
+
+## Session Execution Modes
+
+Jean has three execution modes that control how Claude operates:
+
+### Plan Mode (Default)
+
+Claude first creates a plan before executing. This is the safest mode for complex tasks.
+
+**How it works:**
+1. You ask Claude to do something
+2. Claude responds with a plan (list of steps)
+3. You review and approve the plan (`Cmd+Enter`)
+4. Claude executes the approved plan
+
+**When to use:**
+- Complex features requiring architectural decisions
+- Tasks involving multiple files or systems
+- When you want visibility into Claude's approach before changes are made
+
+### Build Mode
+
+Claude executes immediately without planning. Faster but less predictable.
+
+**When to use:**
+- Simple, well-defined tasks
+- Following up on previous work
+- Quick fixes or iterations
+
+**Keyboard shortcut:**
+- Approve plan and switch to Build: `Cmd+Shift+Enter`
+
+### Yolo Mode
+
+Claude executes immediately with minimal safeguards. Fastest but least controlled.
+
+**When to use:**
+- Prototyping and experiments
+- When speed matters more than safety
+- Iterating rapidly on small changes
+
+**Keyboard shortcuts:**
+- Approve plan and switch to Yolo: `Cmd+Y`
+- Approve plan, clear context, and start new Yolo session: `Cmd+Shift+Y`
+
+### Switching Modes
+
+Press `Shift+Tab` to cycle through Plan → Build → Yolo → Plan.
+
+The current mode is shown in the chat toolbar.
+
+## Organizing Sessions
+
+<Steps>
+  <Step title="Rename Sessions">
+    Click the session name in the sidebar and type a new name. Good names describe the task:
+    - "Add user authentication"
+    - "Fix login bug #245"
+    - "Refactor API client"
+    - "Investigate performance issue"
+  </Step>
+
+  <Step title="Label Sessions">
+    Press `Cmd+S` to toggle the "Needs Testing" label on the current session. Labeled sessions show a colored badge in the sidebar.
+
+    <Note>
+      Currently, only one label ("Needs Testing") is supported. More labels may be added in the future.
+    </Note>
+  </Step>
+
+  <Step title="Reorder Sessions">
+    Drag and drop sessions in the sidebar to reorder them. The order is saved per-worktree.
+  </Step>
+
+  <Step title="Use Canvas View">
+    Press `/` (forward slash) to open the canvas view, which shows all sessions as cards in a grid.
+
+    Canvas view lets you:
+    - See session status at a glance (waiting, reviewing, complete)
+    - Navigate with arrow keys
+    - Open plans and recaps quickly (press `P` or `R` on a selected card)
+  </Step>
+</Steps>
+
+## Session Plans and Recaps
+
+Jean generates summaries to help you understand session state without reading full transcripts.
+
+### Plans
+
+When Claude creates a plan (in Plan mode), you can view it later:
+
+<Steps>
+  <Step title="View Plan">
+    Press `P` with a session selected (in canvas view), or click the plan icon in the chat toolbar.
+  </Step>
+
+  <Step title="Review Steps">
+    The plan shows:
+    - Numbered list of steps
+    - Current progress (which steps are complete)
+    - Any unresolved questions or blockers
+  </Step>
+
+  <Step title="Approve or Modify">
+    From the plan dialog, you can:
+    - Approve the plan (`Cmd+Enter`)
+    - Go back to chat and ask for changes
+    - Switch execution mode before approving
+  </Step>
+</Steps>
+
+### Recaps
+
+Recaps are AI-generated summaries of what happened in a session.
+
+<Steps>
+  <Step title="Enable Recaps">
+    Open Preferences → Experimental Features and enable **Session Recaps**.
+  </Step>
+
+  <Step title="Generate Recap">
+    Press `R` with a session selected (in canvas view), or click **Create Recap** in the Magic Modal (`Cmd+M`).
+
+    Jean will send the conversation history to a model (Haiku by default) and generate:
+    - **Chat Summary**: One-sentence overview of the goal and status
+    - **Last Action**: What was just completed in the last exchange
+  </Step>
+
+  <Step title="View Recap">
+    Recaps are shown:
+    - In the session card on canvas view (below the session name)
+    - In a dialog when you press `R` on a session
+
+    Recaps help you quickly remember what a session was about without reading the full transcript.
+  </Step>
+</Steps>
+
+## Archiving and Restoring Sessions
+
+<Steps>
+  <Step title="Close a Session">
+    Press `Cmd+W` to close the current session.
+
+    Depending on your **Session Removal Behavior** setting (Preferences → General):
+    - **Archive**: Session is hidden but can be restored later
+    - **Delete**: Session is permanently deleted
+  </Step>
+
+  <Step title="Restore Last Archived">
+    Press `Cmd+Shift+T` to restore the most recently archived session.
+
+    This works across all worktrees in the current project.
+  </Step>
+
+  <Step title="View All Archived Sessions">
+    Right-click a worktree in the sidebar → **View Archived**.
+
+    You'll see a list of all archived sessions with timestamps. Click one to restore it.
+  </Step>
+
+  <Step title="Permanently Delete Archived Sessions">
+    Archived sessions are automatically deleted after a retention period (default: 7 days).
+
+    Change the retention period in Preferences → General → **Archive Retention Days**.
+
+    Set to **0** to keep archived sessions forever.
+  </Step>
+</Steps>
+
+## Session Context Management
+
+As sessions grow longer, token usage increases and performance may degrade. Jean provides tools to manage context.
+
+<Steps>
+  <Step title="Check Token Usage">
+    The chat toolbar shows the current token count for the session. Large sessions (>100K tokens) may be slower and more expensive.
+  </Step>
+
+  <Step title="Save Context">
+    When you reach a good stopping point, press `Cmd+M` → **Save Context**.
+
+    Jean will:
+    1. Send the conversation history to Opus (by default)
+    2. Generate a structured summary with:
+       - Main goal and key decisions
+       - Problems solved and trade-offs considered
+       - Current state and next steps
+       - Important file paths and patterns
+    3. Save the summary to `.ai/summaries/<slug>.md`
+    4. Show a toast notification with a link to the saved file
+  </Step>
+
+  <Step title="Clear Context and Continue">
+    Press `Cmd+Shift+Enter` (from a plan approval) to:
+    - Approve the current plan
+    - Clear the session context
+    - Start a fresh Build session
+
+    Or press `Cmd+Shift+Y` to do the same but start a Yolo session.
+
+    <Warning>
+      Clearing context removes all messages from the session. Make sure you've saved important context first.
+    </Warning>
+  </Step>
+
+  <Step title="Load Context">
+    Press `Cmd+M` → **Load Context** to load saved summaries into a new session.
+
+    You can select multiple summaries to combine context from different sessions.
+  </Step>
+</Steps>
+
+## Finished Sessions
+
+Jean tracks when sessions are "finished" (waiting for your input) and notifies you.
+
+<Steps>
+  <Step title="Enable Notifications">
+    In Preferences → General → **Notification Sounds**, choose a sound for:
+    - **Waiting Sound**: Plays when a session finishes and is waiting for input
+    - **Review Sound**: Plays when a session finishes reviewing code
+  </Step>
+
+  <Step title="View Finished Sessions">
+    Press `Cmd+Shift+F` to open the Finished Sessions popover.
+
+    This shows all sessions across all worktrees that are waiting for your input.
+  </Step>
+
+  <Step title="Jump to Session">
+    Click a session in the Finished Sessions list to jump directly to it.
+
+    The popover closes automatically and the session opens in the chat view.
+  </Step>
+</Steps>
+
+## Common Pitfalls
+
+<Warning>
+  **Lost Context After Switching Sessions**: When you switch sessions, the previous session's context is NOT loaded into the new session. Each session is isolated.
+
+  **Solution**: If you need to continue work from a previous session, either keep working in the same session or use **Save Context** → **Load Context** to transfer summaries.
+</Warning>
+
+<Warning>
+  **Session Names Too Generic**: Auto-generated names sometimes miss the mark. If a session is named "Code changes" or "Bug investigation", rename it to be more specific.
+
+  **Solution**: Rename sessions immediately after creation so you remember what they're for.
+</Warning>
+
+<Warning>
+  **Clearing Context Too Early**: If you clear context before Claude finishes a multi-step task, you'll lose important context and Claude may repeat work or make mistakes.
+
+  **Solution**: Only clear context at natural stopping points (feature complete, bug fixed, tests passing).
+</Warning>
+
+## Best Practices
+
+<Tip>
+  **One Session per Task**: Create separate sessions for different tasks (even within the same worktree). This keeps context focused and token counts low.
+</Tip>
+
+<Tip>
+  **Use Plan Mode for New Work**: Start complex tasks in Plan mode. You can switch to Build or Yolo later once the approach is clear.
+</Tip>
+
+<Tip>
+  **Save Context Regularly**: After completing a major milestone, save context. This creates checkpoints you can return to later.
+</Tip>
+
+<Tip>
+  **Archive Completed Sessions**: Once a session's work is merged and deployed, archive it. This keeps your sidebar clean and focused on active work.
+</Tip>
+
+<Tip>
+  **Label Work-In-Progress**: Use the "Needs Testing" label to mark sessions that have changes waiting for manual testing or review.
+</Tip>
+
+## Next Steps
+
+- [Using Magic Commands](/guides/using-magic-commands) - Automate common git and GitHub workflows
+- [Keyboard Shortcuts](/guides/keyboard-shortcuts) - Master session navigation and management
+- [Customization](/guides/customization) - Personalize your Jean experience

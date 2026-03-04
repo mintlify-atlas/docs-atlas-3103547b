@@ -1,0 +1,281 @@
+---
+title: Keyboard Shortcuts
+description: Complete reference of all keyboard shortcuts in Jean
+---
+
+## Overview
+
+Jean is keyboard-first. Nearly every action has a shortcut. This guide documents all default keybindings organized by category.
+
+**Note**: `Mod` means `Cmd` on Mac, `Ctrl` on Windows/Linux.
+
+All shortcuts are customizable in Preferences → Keybindings.
+
+## Navigation
+
+| Shortcut | Action | Description |
+|----------|--------|-------------|
+| `Mod+B` | Toggle left sidebar | Show or hide the projects sidebar |
+| `Mod+,` | Open preferences | Open the preferences dialog |
+| `Mod+O` | Open in... | Open current worktree in editor, terminal, or finder |
+| `Mod+N` | New worktree | Create a new worktree in the current project |
+| `Mod+Shift+T` | Restore archived | Restore the most recently archived worktree or session |
+| `/` | Focus canvas search | Focus the search input on canvas views |
+| `Mod+Shift+D` | GitHub Dashboard | Open the GitHub Dashboard (issues, PRs, security across all projects) |
+| `Mod+.` | Quick menu | Open the floating quick menu |
+| `Mod+Shift+F` | Finished sessions | Open the finished/unread sessions popover |
+
+## Git Operations
+
+| Shortcut | Action | Description |
+|----------|--------|-------------|
+| `Mod+Shift+C` | Open commit modal | Open the git commit dialog |
+| `Mod+G` | Open git diff | Open the git diff view for uncommitted changes |
+| `Mod+M` | Magic commands | Open magic git commands menu |
+| `Mod+R` | Execute run | Start or stop the run script in current workspace |
+
+## Chat and Sessions
+
+| Shortcut | Action | Description |
+|----------|--------|-------------|
+| `Mod+L` | Focus chat input | Move focus to the chat textarea |
+| `Mod+T` | New session | Create a new chat session |
+| `Mod+Alt+→` | Next session | Switch to the next chat session |
+| `Mod+Alt+←` | Previous session | Switch to the previous chat session |
+| `Mod+W` | Close session | Close the current session, or remove worktree if last session |
+| `Mod+S` | Toggle label | Mark/unmark session with "Needs testing" label |
+| `Shift+Tab` | Cycle execution mode | Cycle through Plan, Build, and Yolo modes |
+| `Mod+\`` | Toggle terminal | Show or hide the terminal panel |
+| `Mod+↑` | Scroll chat up | Scroll the chat message list up by one page |
+| `Mod+↓` | Scroll chat down | Scroll the chat message list down by one page |
+| `Mod+Alt+Backspace` | Cancel prompt | Cancel the running Claude process for the current session |
+
+## Plan Approval
+
+| Shortcut | Action | Description |
+|----------|--------|-------------|
+| `Mod+Enter` | Approve plan | Approve the current plan in planning mode |
+| `Mod+Y` | Approve plan (YOLO) | Approve the current plan with YOLO mode |
+| `Mod+Shift+Y` | Clear context and yolo | Approve plan, clear context, and start a new yolo session |
+| `Mod+Shift+Enter` | Clear context and build | Approve plan, clear context, and start a new build session |
+| `P` | Open plan | Open the plan dialog for the selected session (canvas view) |
+| `R` | Open recap | Open the session recap dialog for the selected session (canvas view) |
+
+## Model Selection
+
+| Shortcut | Action | Description |
+|----------|--------|-------------|
+| `Mod+Shift+P` | Open provider dropdown | Open the provider selector dropdown |
+| `Mod+Shift+M` | Open model dropdown | Open the model selector dropdown |
+| `Mod+Shift+E` | Open thinking dropdown | Open the thinking/effort level dropdown |
+
+## Canvas View Navigation
+
+When in canvas view (press `/` to enter):
+
+| Shortcut | Action | Description |
+|----------|--------|-------------|
+| `Arrow Keys` | Navigate cards | Move selection between session cards |
+| `Enter` | Open session | Open the selected session in chat view |
+| `P` | Open plan | Open the plan dialog for selected session |
+| `R` | Open recap | Open the recap dialog for selected session |
+| `/` | Focus search | Focus the search input to filter sessions |
+| `Escape` | Clear selection | Clear current selection |
+
+## Default Shortcuts by Category
+
+Here's the complete list extracted from the source code:
+
+### Navigation (14 shortcuts)
+
+<AccordionGroup>
+  <Accordion title="Complete Navigation Shortcuts">
+    - `Mod+B`: Toggle left sidebar
+    - `Mod+,`: Open preferences
+    - `Mod+O`: Open in editor/terminal/finder
+    - `Mod+N`: New worktree
+    - `Mod+Shift+T`: Restore last archived
+    - `/`: Focus canvas search
+    - `Mod+Shift+D`: GitHub Dashboard
+    - `Mod+.`: Quick menu
+    - `Mod+Shift+F`: Finished sessions
+    - `Mod+R`: Execute run script
+  </Accordion>
+</AccordionGroup>
+
+### Git (4 shortcuts)
+
+<AccordionGroup>
+  <Accordion title="Complete Git Shortcuts">
+    - `Mod+Shift+C`: Open commit modal
+    - `Mod+G`: Open git diff
+    - `Mod+M`: Magic commands menu
+  </Accordion>
+</AccordionGroup>
+
+### Chat (23 shortcuts)
+
+<AccordionGroup>
+  <Accordion title="Complete Chat Shortcuts">
+    - `Mod+L`: Focus chat input
+    - `Mod+T`: New session
+    - `Mod+Alt+→`: Next session
+    - `Mod+Alt+←`: Previous session
+    - `Mod+W`: Close session or worktree
+    - `Mod+S`: Toggle "Needs testing" label
+    - `Shift+Tab`: Cycle execution mode (Plan/Build/Yolo)
+    - `Mod+Enter`: Approve plan
+    - `Mod+Y`: Approve plan (YOLO mode)
+    - `Mod+Shift+Y`: Approve plan, clear context, start yolo
+    - `Mod+Shift+Enter`: Approve plan, clear context, start build
+    - `P`: Open plan dialog (canvas view)
+    - `R`: Open recap dialog (canvas view)
+    - `Mod+\``: Toggle terminal panel
+    - `Mod+↑`: Scroll chat up
+    - `Mod+↓`: Scroll chat down
+    - `Mod+Alt+Backspace`: Cancel current prompt
+    - `Mod+Shift+P`: Open provider dropdown
+    - `Mod+Shift+M`: Open model dropdown
+    - `Mod+Shift+E`: Open thinking level dropdown
+  </Accordion>
+</AccordionGroup>
+
+## Customizing Shortcuts
+
+<Steps>
+  <Step title="Open Keybindings">
+    Press `Mod+,` to open Preferences, then go to the **Keybindings** tab.
+  </Step>
+
+  <Step title="Find the Shortcut">
+    Use the category tabs (Navigation, Git, Chat) or search for the action name.
+  </Step>
+
+  <Step title="Edit the Shortcut">
+    Click on the current shortcut to edit it. Press your desired key combination.
+
+    Jean will detect conflicts and warn you if the shortcut is already used.
+  </Step>
+
+  <Step title="Save Changes">
+    Changes are saved automatically. Test the new shortcut immediately to verify it works.
+  </Step>
+
+  <Step title="Reset to Defaults">
+    If you make a mistake, click **Reset All to Defaults** to restore Jean's built-in shortcuts.
+  </Step>
+</Steps>
+
+## Tips for Efficient Navigation
+
+<Tip>
+  **Master the Canvas View**: Press `/` to enter canvas view, use arrow keys to navigate, and `Enter` to open sessions. This is faster than clicking in the sidebar.
+</Tip>
+
+<Tip>
+  **Use Quick Menu for Rare Actions**: Press `Mod+.` and type the action name (e.g., "archive", "merge", "review"). This is faster than opening the Magic Modal for infrequent commands.
+</Tip>
+
+<Tip>
+  **Memorize Session Switching**: `Mod+Alt+→` and `Mod+Alt+←` let you cycle through sessions without touching the mouse. Pair with `Mod+T` to create new sessions instantly.
+</Tip>
+
+<Tip>
+  **Plan Approval Shortcuts Save Time**: Learn `Mod+Enter` (approve), `Mod+Y` (yolo), `Mod+Shift+Y` (clear context + yolo). These avoid opening the plan dialog entirely.
+</Tip>
+
+<Tip>
+  **Focus Chat Input from Anywhere**: `Mod+L` always focuses the chat input, no matter where you are in the UI. Use it to quickly type follow-up messages.
+</Tip>
+
+## Common Pitfalls
+
+<Warning>
+  **OS-Level Conflicts**: Some shortcuts may conflict with your OS or other apps. For example:
+  - `Mod+W` closes windows in browsers
+  - `Mod+M` minimizes windows on Windows
+  - `Mod+L` locks the screen on some Linux distros
+
+  **Solution**: Customize conflicting shortcuts in Preferences → Keybindings.
+</Warning>
+
+<Warning>
+  **Canvas View Shortcuts Only Work in Canvas View**: Shortcuts like `P` (open plan) and `R` (open recap) only work when you're in the canvas view, not in the chat view.
+
+  **Solution**: Press `/` to enter canvas view first, or use the Magic Modal (`Mod+M`) to access these actions from anywhere.
+</Warning>
+
+<Warning>
+  **Modifier Key Confusion**: `Mod` means `Cmd` on Mac but `Ctrl` on Windows/Linux. If a shortcut doesn't work, double-check you're using the correct modifier.
+
+  **Solution**: Look at the displayed shortcuts in the UI (they show the correct modifier for your OS).
+</Warning>
+
+## Platform-Specific Notes
+
+### macOS
+
+- `Mod` = `Cmd` (⌘)
+- `Alt` = `Option` (⌥)
+- Jean uses native macOS shortcuts where possible (e.g., `Cmd+,` for preferences)
+
+### Windows
+
+- `Mod` = `Ctrl`
+- `Alt` = `Alt`
+- Some shortcuts may conflict with Windows defaults (e.g., `Alt+Tab` for app switching)
+
+### Linux
+
+- `Mod` = `Ctrl`
+- `Alt` = `Alt`
+- Window manager shortcuts may conflict (e.g., `Ctrl+Alt+Arrow` for workspace switching)
+- Consider customizing conflicting shortcuts in Preferences
+
+## Quick Reference Card
+
+Print or save this for quick lookup:
+
+```
+=== JEAN KEYBOARD SHORTCUTS ===
+
+Navigation:
+  Mod+B        Toggle sidebar
+  Mod+,        Preferences
+  Mod+N        New worktree
+  Mod+O        Open in...
+  Mod+.        Quick menu
+
+Git:
+  Mod+M        Magic commands
+  Mod+G        Git diff
+  Mod+Shift+C  Commit
+
+Chat:
+  Mod+L        Focus input
+  Mod+T        New session
+  Mod+W        Close session
+  Mod+Alt+→    Next session
+  Mod+Alt+←    Previous session
+  Shift+Tab    Cycle mode
+
+Plan:
+  Mod+Enter    Approve
+  Mod+Y        Approve (YOLO)
+  Mod+Shift+Y  Clear + YOLO
+  P            Open plan
+  R            Open recap
+
+Canvas:
+  /            Focus search
+  Arrows       Navigate
+  Enter        Open session
+
+(Mod = Cmd on Mac, Ctrl on Windows/Linux)
+```
+
+## Next Steps
+
+- [Customization](/guides/customization) - Customize keybindings and more
+- [Managing Sessions](/guides/managing-sessions) - Use shortcuts to manage sessions efficiently
+- [Using Magic Commands](/guides/using-magic-commands) - Access magic commands via keyboard

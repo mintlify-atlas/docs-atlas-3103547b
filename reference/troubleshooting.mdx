@@ -1,0 +1,656 @@
+---
+title: 'Troubleshooting'
+description: 'Common issues and solutions for Jean'
+---
+
+## General Issues
+
+### Jean Won't Start
+
+**Symptoms**: App crashes on launch, white screen, immediate quit
+
+**Solutions**:
+
+1. **Check system requirements**:
+   - macOS 11+ (Big Sur or later)
+   - Windows 10+ / Windows Server 2019+
+   - Linux (glibc 2.31+)
+
+2. **Clear cache**:
+   ```bash
+   # macOS
+   rm -rf ~/Library/Caches/io.coollabs.jean
+   
+   # Linux
+   rm -rf ~/.cache/jean
+   
+   # Windows
+   rd /s /q "%LOCALAPPDATA%\jean\cache"
+   ```
+
+3. **Reset preferences**:
+   ```bash
+   # macOS
+   rm ~/Library/Application\ Support/io.coollabs.jean/preferences.json
+   
+   # Linux
+   rm ~/.config/jean/preferences.json
+   
+   # Windows
+   del "%APPDATA%\jean\preferences.json"
+   ```
+
+4. **Check permissions** (macOS):
+   - System Preferences > Security & Privacy
+   - Allow Jean under "Privacy" tabs (Full Disk Access, Files and Folders)
+
+5. **Reinstall**:
+   - Download latest version from https://jean.build
+   - Completely remove old version first
+   - Fresh install
+
+### Jean is Slow/Unresponsive
+
+**Symptoms**: Laggy UI, delayed responses, high CPU usage
+
+**Solutions**:
+
+1. **Reduce polling intervals**:
+   - Preferences > Performance
+   - Increase git_poll_interval to 120s+
+   - Increase remote_poll_interval to 300s+
+
+2. **Close unused sessions**:
+   - Archive old sessions
+   - Delete archived items
+   - Reduce active session count
+
+3. **Disable experimental features**:
+   - Preferences > Experimental
+   - Disable session recap
+   - Disable parallel execution prompt
+
+4. **Check resource usage**:
+   - Activity Monitor (macOS) / Task Manager (Windows)
+   - If Jean using >2GB RAM, restart app
+   - If CPU usage sustained >50%, check for runaway processes
+
+5. **Clear session history**:
+   - Long sessions (500+ messages) can slow down
+   - Archive and start fresh
+   - Or use "Clear Context and Continue"
+
+## Backend Issues
+
+### CLI Not Found
+
+**Symptoms**: `Error: claude: command not found` / `codex: command not found` / `opencode: command not found`
+
+**Solutions**:
+
+1. **Verify installation**:
+   ```bash
+   which claude
+   which codex
+   which opencode
+   ```
+
+2. **Install via Jean UI**:
+   - Preferences > Backends
+   - Click "Install" for missing backend
+   - Follow installation wizard
+
+3. **Add to PATH**:
+   ```bash
+   # ~/.zshrc or ~/.bashrc
+   export PATH="$PATH:/path/to/cli/bin"
+   ```
+
+4. **Restart Jean** after installation
+
+### Authentication Failed
+
+**Symptoms**: `Error: Not authenticated` / `401 Unauthorized` / `Invalid API key`
+
+**Solutions**:
+
+1. **Re-authenticate**:
+   ```bash
+   claude auth
+   codex auth
+   opencode auth
+   ```
+
+2. **Check API key**:
+   ```bash
+   # For Claude
+   cat ~/.claude/settings.json
+   
+   # For Codex
+   cat ~/.codex/config.toml
+   
+   # For OpenCode
+   cat ~/.config/opencode/opencode.json
+   ```
+
+3. **Verify key is valid**:
+   - Log into provider dashboard
+   - Check API key status (not expired/revoked)
+   - Generate new key if needed
+
+4. **Environment variables**:
+   ```bash
+   export ANTHROPIC_API_KEY="sk-ant-..."
+   export OPENAI_API_KEY="sk-..."
+   ```
+
+5. **Restart Jean** after authentication
+
+### Model Not Available
+
+**Symptoms**: `Error: Model 'opus' not found` / `Invalid model ID`
+
+**Solutions**:
+
+1. **Check model name**:
+   - Verify model ID matches backend
+   - Claude: `opus`, `sonnet`, `haiku`
+   - Codex: `gpt-5.3-codex`, `gpt-5.1-codex-mini`
+   - OpenCode: `opencode/[provider]/[model]`
+
+2. **Update CLI**:
+   ```bash
+   brew upgrade claude-cli
+   codex update
+   npm update -g opencode
+   ```
+
+3. **Check subscription**:
+   - Verify account has access to model
+   - Some models require upgraded plans
+
+## Git Issues
+
+### Worktree Creation Failed
+
+**Symptoms**: `Error creating worktree` / `Branch already exists` / `Path already exists`
+
+**Solutions**:
+
+1. **Branch name conflict**:
+   - Jean suggests alternative name with suffix
+   - Accept suggestion or choose different name
+
+2. **Path conflict**:
+   - Directory already exists at worktree path
+   - Delete/move existing directory
+   - Or restore archived worktree if path matches
+
+3. **Insufficient permissions**:
+   - Check write access to worktrees directory
+   - Default: `~/jean/`
+   - Verify ownership: `ls -la ~/jean/`
+
+4. **Git error**:
+   - Check git status in project root:
+     ```bash
+     cd /path/to/project
+     git status
+     git worktree list
+     ```
+   - Remove stale worktrees:
+     ```bash
+     git worktree prune
+     ```
+
+### Git Commands Failing
+
+**Symptoms**: `fatal: not a git repository` / `Permission denied` / `Command failed`
+
+**Solutions**:
+
+1. **Verify git installation**:
+   ```bash
+   git --version
+   ```
+
+2. **Check repository**:
+   ```bash
+   cd /path/to/project
+   git rev-parse --git-dir
+   ```
+
+3. **Fix git config**:
+   ```bash
+   git config user.name "Your Name"
+   git config user.email "your@email.com"
+   ```
+
+4. **SSH key issues**:
+   ```bash
+   # Test GitHub connection
+   ssh -T git@github.com
+   
+   # Add SSH key if needed
+   ssh-add ~/.ssh/id_rsa
+   ```
+
+5. **HTTPS credentials**:
+   ```bash
+   # Configure credential helper
+   git config --global credential.helper osxkeychain  # macOS
+   git config --global credential.helper manager      # Windows
+   ```
+
+### Merge Conflicts
+
+**Symptoms**: `Merge conflict detected` / `Cannot merge automatically`
+
+**Solutions**:
+
+1. **Use Jean's conflict resolver**:
+   - Jean detects conflicts automatically
+   - Click "Resolve Conflicts" in chat
+   - AI guides through resolution
+
+2. **Manual resolution**:
+   - Open conflicted files in editor
+   - Search for `<<<<<<<`, `=======`, `>>>>>>>`
+   - Choose changes to keep
+   - Stage resolved files:
+     ```bash
+     git add file.txt
+     git commit
+     ```
+
+3. **Abort merge**:
+   ```bash
+   git merge --abort
+   ```
+
+## GitHub Integration Issues
+
+### gh CLI Not Found
+
+**Symptoms**: `Error: gh: command not found` / GitHub features disabled
+
+**Solutions**:
+
+1. **Install gh CLI**:
+   ```bash
+   # macOS
+   brew install gh
+   
+   # Windows (via winget)
+   winget install --id GitHub.cli
+   
+   # Linux (Debian/Ubuntu)
+   sudo apt install gh
+   ```
+
+2. **Authenticate**:
+   ```bash
+   gh auth login
+   ```
+
+3. **Verify**:
+   ```bash
+   gh auth status
+   ```
+
+### PR Creation Failed
+
+**Symptoms**: `Error creating PR` / `Push failed` / `Permission denied`
+
+**Solutions**:
+
+1. **Check remote**:
+   ```bash
+   git remote -v
+   ```
+
+2. **Push permissions**:
+   - Verify you have write access to repository
+   - Check branch protection rules
+
+3. **Force push fallback**:
+   - Jean automatically creates new branch if push fails
+   - Check for fallback notification
+
+4. **Authentication**:
+   ```bash
+   gh auth refresh
+   ```
+
+### Issue Investigation Not Working
+
+**Symptoms**: `Error loading issue` / `404 Not Found`
+
+**Solutions**:
+
+1. **Check issue number**: Verify issue exists
+
+2. **Repository context**:
+   - Ensure worktree is in correct repository
+   - Jean infers repo from git remote
+
+3. **Private repository**:
+   - Verify gh CLI has access:
+     ```bash
+     gh issue view <number>
+     ```
+
+## MCP Server Issues
+
+### MCP Servers Not Loading
+
+**Symptoms**: Servers appear in UI but don't work / Tools not available in chat
+
+**Solutions**:
+
+1. **Check config syntax**:
+   ```bash
+   # Claude
+   cat ~/.claude.json
+   jq . ~/.claude.json  # Validate JSON
+   
+   # Codex
+   cat ~/.codex/config.toml
+   
+   # OpenCode
+   cat ~/.config/opencode/opencode.json
+   jq . ~/.config/opencode/opencode.json
+   ```
+
+2. **Test MCP server manually**:
+   ```bash
+   npx -y @modelcontextprotocol/server-filesystem /tmp
+   ```
+
+3. **Check enabled status**:
+   - Preferences > MCP Servers
+   - Verify server is enabled (toggle on)
+
+4. **Backend mismatch**:
+   - Ensure server config matches session backend
+   - Claude sessions use `.claude.json`
+   - Codex sessions use `config.toml`
+   - OpenCode sessions use `opencode.json`
+
+5. **Restart Jean** after config changes
+
+### MCP Health Check Failing
+
+**Symptoms**: Server shows "unhealthy" status / Red indicator
+
+**Solutions**:
+
+1. **Check command exists**:
+   ```bash
+   which npx
+   which node
+   ```
+
+2. **Test server command**:
+   ```bash
+   # Copy command from config, run manually
+   npx -y @modelcontextprotocol/server-github
+   ```
+
+3. **Environment variables**:
+   - Check if server requires env vars (API keys, etc.)
+   - Verify vars are set in config
+
+4. **Permissions**:
+   - Filesystem servers need read/write access
+   - Check directory permissions
+
+## Remote Access Issues
+
+### HTTP Server Won't Start
+
+**Symptoms**: `Failed to bind to port` / `Address already in use`
+
+**Solutions**:
+
+1. **Change port**:
+   - Preferences > Remote Access
+   - Set different port (e.g., 3457, 8080)
+
+2. **Check port usage**:
+   ```bash
+   # macOS/Linux
+   lsof -i :3456
+   
+   # Windows
+   netstat -ano | findstr :3456
+   ```
+
+3. **Kill conflicting process**:
+   ```bash
+   # macOS/Linux
+   kill -9 <PID>
+   
+   # Windows
+   taskkill /PID <PID> /F
+   ```
+
+### Cannot Connect from Other Device
+
+**Symptoms**: Connection refused / Timeout / 401 Unauthorized
+
+**Solutions**:
+
+1. **Disable localhost-only**:
+   - Preferences > Remote Access
+   - Uncheck "Localhost Only"
+   - Restart server
+
+2. **Firewall**:
+   ```bash
+   # macOS
+   # System Preferences > Security & Privacy > Firewall > Firewall Options
+   # Allow Jean
+   
+   # Linux (ufw)
+   sudo ufw allow 3456/tcp
+   
+   # Windows
+   # Windows Defender Firewall > Inbound Rules > New Rule
+   # Allow port 3456 TCP
+   ```
+
+3. **Get LAN IP**:
+   ```bash
+   # macOS/Linux
+   ifconfig | grep "inet "
+   
+   # Windows
+   ipconfig
+   ```
+
+4. **Test connection**:
+   ```bash
+   curl http://[lan-ip]:3456/api/auth?token=...
+   ```
+
+5. **Verify token**:
+   - Copy token from Preferences > Remote Access
+   - Include in URL: `?token=abc123...`
+
+## Performance Issues
+
+### High Memory Usage
+
+**Symptoms**: Jean using >2GB RAM / System slowing down
+
+**Solutions**:
+
+1. **Archive old sessions**:
+   - Close unused sessions
+   - Archive worktrees you're not actively working on
+
+2. **Reduce retention**:
+   - Preferences > General
+   - Set archive retention to 7 days
+
+3. **Clear logs**:
+   - Help > Open Logs Folder
+   - Delete old log files
+
+4. **Restart Jean**: Fresh start clears memory
+
+### High CPU Usage
+
+**Symptoms**: Jean using >50% CPU constantly / Fan noise
+
+**Solutions**:
+
+1. **Check running processes**:
+   - Activity Monitor > Filter: "jean"
+   - Look for stuck CLI processes
+
+2. **Cancel long-running operations**:
+   - If AI query stuck, press `Cmd+Opt+Backspace` to cancel
+
+3. **Reduce polling**:
+   - Preferences > Performance
+   - Increase git/remote poll intervals to 300s+
+
+4. **Disable features**:
+   - Turn off session recap
+   - Disable parallel execution
+   - Reduce syntax highlighting complexity (lighter theme)
+
+### Slow File Operations
+
+**Symptoms**: Slow file opens / git status takes long
+
+**Solutions**:
+
+1. **Large repositories**:
+   - Use `.gitignore` to exclude large files
+   - Consider sparse checkout
+
+2. **Network drives**:
+   - Move worktrees to local disk
+   - Avoid NFS/SMB for active development
+
+3. **Antivirus**:
+   - Exclude Jean directories from scanning:
+     - `~/jean/`
+     - `~/Library/Application Support/io.coollabs.jean/`
+
+## Platform-Specific Issues
+
+### macOS
+
+**"Jean" is damaged and can't be opened**:
+
+```bash
+# Remove quarantine attribute
+xattr -cr /Applications/Jean.app
+```
+
+**Notarization issues**:
+- Right-click Jean.app > Open
+- Click "Open" in dialog
+- Or: System Preferences > Security & Privacy > Open Anyway
+
+**Terminal not opening**:
+- Check default terminal: Preferences > Terminal
+- Verify Terminal.app has accessibility permissions
+
+### Windows
+
+**SmartScreen warning**:
+- Click "More info"
+- Click "Run anyway"
+
+**Console window flashing**:
+- This is normal (git commands)
+- Jean uses `CREATE_NO_WINDOW` to minimize flashing
+
+**Path issues**:
+- Ensure git in PATH: `where git`
+- Add to PATH if missing:
+  - System Properties > Environment Variables
+  - Add git bin directory
+
+### Linux
+
+**AppImage won't run**:
+```bash
+chmod +x Jean.AppImage
+./Jean.AppImage
+```
+
+**Missing dependencies**:
+```bash
+# Debian/Ubuntu
+sudo apt install libwebkit2gtk-4.0-37 libappindicator3-1
+
+# Fedora
+sudo dnf install webkit2gtk3 libappindicator-gtk3
+
+# Arch
+sudo pacman -S webkit2gtk libappindicator-gtk3
+```
+
+**Wayland issues**:
+```bash
+# Force X11
+GDK_BACKEND=x11 ./Jean.AppImage
+```
+
+## Diagnostic Tools
+
+### Logs
+
+**Location**:
+```bash
+# macOS
+~/Library/Logs/io.coollabs.jean/
+
+# Linux
+~/.local/share/jean/logs/
+
+# Windows
+%APPDATA%\jean\logs\
+```
+
+**Or via UI**: Help > Open Logs Folder
+
+**Useful log files**:
+- `main.log` - Application logs
+- `webview.log` - UI logs
+- `backend.log` - CLI backend logs
+
+### Debug Mode
+
+1. Preferences > Advanced
+2. Enable "Debug Mode"
+3. View debug panel in chat
+4. Check for errors/warnings
+
+### Health Check
+
+1. Preferences > Backends
+2. Click "Check Health"
+3. Review backend status
+4. Run MCP health check
+
+## Getting Help
+
+If issue persists:
+
+1. **Check GitHub Issues**: https://github.com/coollabsio/jean/issues
+2. **Search existing issues** before creating new one
+3. **Provide information**:
+   - Jean version (Help > About)
+   - OS version
+   - Steps to reproduce
+   - Relevant logs (Help > Open Logs Folder)
+   - Screenshots if UI issue
+
+4. **Create issue**: https://github.com/coollabsio/jean/issues/new

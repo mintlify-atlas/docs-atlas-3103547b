@@ -1,0 +1,530 @@
+---
+title: 'Projects API'
+description: 'Manage Git projects and repositories'
+---
+
+## Overview
+
+The Projects API provides functionality for managing Git repositories, including adding/removing projects, organizing them in folders, and configuring project settings.
+
+## Data Structures
+
+### Project
+
+<ResponseField name="id" type="string" required>
+  Unique identifier (UUID v4)
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  Display name (derived from repo directory name or folder name)
+</ResponseField>
+
+<ResponseField name="path" type="string" required>
+  Absolute path to the original git repository (empty for folders)
+</ResponseField>
+
+<ResponseField name="default_branch" type="string" required>
+  Branch to create worktrees from (empty for folders)
+</ResponseField>
+
+<ResponseField name="added_at" type="number" required>
+  Unix timestamp when project was added
+</ResponseField>
+
+<ResponseField name="order" type="number" default={0}>
+  Display order in sidebar (lower = higher in list)
+</ResponseField>
+
+<ResponseField name="parent_id" type="string | null">
+  Parent folder ID (null = root level)
+</ResponseField>
+
+<ResponseField name="is_folder" type="boolean" default={false}>
+  True if this is a folder (not a real project)
+</ResponseField>
+
+<ResponseField name="avatar_path" type="string | null">
+  Path to custom avatar image (relative to app data dir)
+</ResponseField>
+
+<ResponseField name="enabled_mcp_servers" type="string[] | null">
+  MCP server names enabled by default for this project (null = inherit from global)
+</ResponseField>
+
+<ResponseField name="custom_system_prompt" type="string | null">
+  Custom system prompt appended to every session execution
+</ResponseField>
+
+<ResponseField name="default_provider" type="string | null">
+  Default provider profile name for sessions (null = use global default)
+</ResponseField>
+
+<ResponseField name="default_backend" type="string | null">
+  Default CLI backend for sessions: "claude" | "codex" | "opencode" (null = use global default)
+</ResponseField>
+
+<ResponseField name="worktrees_dir" type="string | null">
+  Custom base directory for worktrees (null = use default ~/jean)
+</ResponseField>
+
+<ResponseField name="linear_api_key" type="string | null">
+  Linear personal API key for fetching issues (per-project)
+</ResponseField>
+
+<ResponseField name="linear_team_id" type="string | null">
+  Linear team ID to filter issues (null = show all teams)
+</ResponseField>
+
+## Commands
+
+### List Projects
+
+Retrieve all projects and folders.
+
+<CodeGroup>
+```javascript Request
+const projects = await api.invoke('list_projects');
+```
+
+```json Response
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "my-app",
+    "path": "/Users/john/projects/my-app",
+    "default_branch": "main",
+    "added_at": 1704067200,
+    "order": 0,
+    "parent_id": null,
+    "is_folder": false
+  },
+  {
+    "id": "660e8400-e29b-41d4-a716-446655440001",
+    "name": "Work Projects",
+    "path": "",
+    "default_branch": "",
+    "added_at": 1704067300,
+    "order": 1,
+    "parent_id": null,
+    "is_folder": true
+  }
+]
+```
+</CodeGroup>
+
+### Add Project
+
+Add a Git repository to Jean.
+
+<ParamField path="path" type="string" required>
+  Absolute path to the Git repository
+</ParamField>
+
+<ParamField path="parentId" type="string">
+  Parent folder ID (omit for root level)
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const project = await api.invoke('add_project', {
+  path: '/Users/john/projects/my-app',
+  parentId: null
+});
+```
+
+```json Response
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "my-app",
+  "path": "/Users/john/projects/my-app",
+  "default_branch": "main",
+  "added_at": 1704067200,
+  "order": 0,
+  "parent_id": null,
+  "is_folder": false
+}
+```
+</CodeGroup>
+
+### Remove Project
+
+Remove a project from Jean (does not delete files).
+
+<ParamField path="projectId" type="string" required>
+  ID of the project to remove
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+await api.invoke('remove_project', {
+  projectId: '550e8400-e29b-41d4-a716-446655440000'
+});
+```
+</CodeGroup>
+
+### Update Project Settings
+
+Update project configuration.
+
+<ParamField path="projectId" type="string" required>
+  ID of the project to update
+</ParamField>
+
+<ParamField path="defaultBranch" type="string">
+  Branch to create worktrees from
+</ParamField>
+
+<ParamField path="customSystemPrompt" type="string">
+  Custom system prompt for AI sessions
+</ParamField>
+
+<ParamField path="enabledMcpServers" type="string[]">
+  List of MCP server names to enable
+</ParamField>
+
+<ParamField path="defaultProvider" type="string">
+  Default provider profile name
+</ParamField>
+
+<ParamField path="worktreesDir" type="string">
+  Custom worktrees base directory
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const updated = await api.invoke('update_project_settings', {
+  projectId: '550e8400-e29b-41d4-a716-446655440000',
+  defaultBranch: 'develop',
+  customSystemPrompt: 'You are an expert in React development.',
+  worktreesDir: '/Users/john/worktrees'
+});
+```
+
+```json Response
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "my-app",
+  "default_branch": "develop",
+  "custom_system_prompt": "You are an expert in React development.",
+  "worktrees_dir": "/Users/john/worktrees",
+  ...
+}
+```
+</CodeGroup>
+
+### Reorder Projects
+
+Reorder projects and folders.
+
+<ParamField path="projectIds" type="string[]" required>
+  Array of project IDs in the desired order
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+await api.invoke('reorder_projects', {
+  projectIds: [
+    '550e8400-e29b-41d4-a716-446655440000',
+    '660e8400-e29b-41d4-a716-446655440001'
+  ]
+});
+```
+</CodeGroup>
+
+## Folder Management
+
+### Create Folder
+
+Create a folder for organizing projects.
+
+<ParamField path="name" type="string" required>
+  Folder name
+</ParamField>
+
+<ParamField path="parentId" type="string">
+  Parent folder ID (omit for root level)
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const folder = await api.invoke('create_folder', {
+  name: 'Work Projects',
+  parentId: null
+});
+```
+
+```json Response
+{
+  "id": "660e8400-e29b-41d4-a716-446655440001",
+  "name": "Work Projects",
+  "path": "",
+  "default_branch": "",
+  "added_at": 1704067300,
+  "order": 0,
+  "parent_id": null,
+  "is_folder": true
+}
+```
+</CodeGroup>
+
+### Rename Folder
+
+<ParamField path="folderId" type="string" required>
+  ID of the folder to rename
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  New folder name
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const folder = await api.invoke('rename_folder', {
+  folderId: '660e8400-e29b-41d4-a716-446655440001',
+  name: 'Personal Projects'
+});
+```
+</CodeGroup>
+
+### Delete Folder
+
+Delete an empty folder.
+
+<ParamField path="folderId" type="string" required>
+  ID of the folder to delete
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+await api.invoke('delete_folder', {
+  folderId: '660e8400-e29b-41d4-a716-446655440001'
+});
+```
+</CodeGroup>
+
+### Move Item
+
+Move a project or folder to a different parent.
+
+<ParamField path="itemId" type="string" required>
+  ID of the item to move
+</ParamField>
+
+<ParamField path="newParentId" type="string">
+  ID of the new parent folder (null for root)
+</ParamField>
+
+<ParamField path="targetIndex" type="number">
+  Target position in the new parent (optional)
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const item = await api.invoke('move_item', {
+  itemId: '550e8400-e29b-41d4-a716-446655440000',
+  newParentId: '660e8400-e29b-41d4-a716-446655440001',
+  targetIndex: 0
+});
+```
+</CodeGroup>
+
+## Git Operations
+
+### Get Project Branches
+
+List all branches in a project's repository.
+
+<ParamField path="projectId" type="string" required>
+  ID of the project
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const branches = await api.invoke('get_project_branches', {
+  projectId: '550e8400-e29b-41d4-a716-446655440000'
+});
+```
+
+```json Response
+[
+  {
+    "name": "main",
+    "current": true
+  },
+  {
+    "name": "develop",
+    "current": false
+  },
+  {
+    "name": "feature/auth",
+    "current": false
+  }
+]
+```
+</CodeGroup>
+
+### Get Git Remotes
+
+List all Git remotes for a repository.
+
+<ParamField path="repoPath" type="string" required>
+  Absolute path to the repository
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const remotes = await api.invoke('get_git_remotes', {
+  repoPath: '/Users/john/projects/my-app'
+});
+```
+
+```json Response
+[
+  {
+    "name": "origin",
+    "url": "https://github.com/user/my-app.git"
+  },
+  {
+    "name": "upstream",
+    "url": "https://github.com/org/my-app.git"
+  }
+]
+```
+</CodeGroup>
+
+### Get GitHub Remotes
+
+List GitHub remotes only.
+
+<ParamField path="repoPath" type="string" required>
+  Absolute path to the repository
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const githubRemotes = await api.invoke('get_github_remotes', {
+  repoPath: '/Users/john/projects/my-app'
+});
+```
+
+```json Response
+[
+  {
+    "name": "origin",
+    "url": "https://github.com/user/my-app.git",
+    "owner": "user",
+    "repo": "my-app"
+  }
+]
+```
+</CodeGroup>
+
+## Avatar Management
+
+### Set Project Avatar
+
+Set a custom avatar image for a project.
+
+<ParamField path="projectId" type="string" required>
+  ID of the project
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const result = await api.invoke('set_project_avatar', {
+  projectId: '550e8400-e29b-41d4-a716-446655440000'
+});
+```
+
+```json Response
+{
+  "avatar_path": "avatars/abc123.png"
+}
+```
+</CodeGroup>
+
+### Remove Project Avatar
+
+<ParamField path="projectId" type="string" required>
+  ID of the project
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const result = await api.invoke('remove_project_avatar', {
+  projectId: '550e8400-e29b-41d4-a716-446655440000'
+});
+```
+</CodeGroup>
+
+## Events
+
+The following events are emitted for project changes:
+
+### project:added
+
+Emitted when a project is added.
+
+```json
+{
+  "type": "event",
+  "event": "project:added",
+  "payload": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "my-app",
+    ...
+  }
+}
+```
+
+### project:updated
+
+Emitted when a project is updated.
+
+```json
+{
+  "type": "event",
+  "event": "project:updated",
+  "payload": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "my-app",
+    ...
+  }
+}
+```
+
+### project:removed
+
+Emitted when a project is removed.
+
+```json
+{
+  "type": "event",
+  "event": "project:removed",
+  "payload": {
+    "project_id": "550e8400-e29b-41d4-a716-446655440000"
+  }
+}
+```
+
+## Error Codes
+
+| Error | Description |
+|-------|-------------|
+| `Project not found: {id}` | The specified project ID does not exist |
+| `Path is not a git repository: {path}` | The path does not contain a .git directory |
+| `Folder name already exists: {name}` | A folder with this name already exists at this level |
+| `Cannot delete non-empty folder` | The folder contains projects or subfolders |
+| `Would exceed max nesting depth` | Moving would create more than 3 levels of nesting |
+| `Cannot move item into itself or descendant` | Circular parent-child relationship |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Worktrees API" icon="code-branch" href="/api/worktrees">
+    Create and manage worktrees
+  </Card>
+  <Card title="Sessions API" icon="messages" href="/api/sessions">
+    Handle chat sessions
+  </Card>
+</CardGroup>

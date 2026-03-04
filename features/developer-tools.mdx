@@ -1,0 +1,585 @@
+---
+title: Developer Tools
+description: Integrated terminal, diff viewer, file preview, and editor integration
+---
+
+## Overview
+
+Jean includes a comprehensive suite of developer tools that integrate directly into the chat interface, providing quick access to terminals, file diffs, previews, and your favorite code editor.
+
+## Key Capabilities
+
+### Integrated Terminal
+
+**Architecture:**
+- Built on xterm.js for rendering
+- PTY (pseudoterminal) backend in Rust
+- Multiple terminals per session
+- Persistent across app restarts
+
+**Terminal management:**
+```typescript
+// From src-tauri/src/terminal/
+interface Terminal {
+  id: string              // UUID v4
+  worktree_path: string   // Working directory
+  session_id: string      // Associated chat session
+  pid: u32                // Process ID
+  shell: string           // Shell command (zsh, bash, etc.)
+}
+```
+
+**Registry system:**
+```rust
+// Terminal registry tracks all active terminals
+struct TerminalRegistry {
+  terminals: HashMap<String, TerminalInfo>
+  pty_handles: HashMap<String, PtyHandle>
+}
+```
+
+**Lifecycle:**
+1. User opens terminal panel
+2. Tauri command `create_terminal` spawns PTY
+3. WebSocket connection established for I/O
+4. xterm.js renders output
+5. User input sent via `write_to_terminal` command
+6. Terminal persists until closed or app exits
+
+**Features:**
+- Resizable split panel
+- Multiple tabs
+- Full shell capabilities
+- Copy/paste support
+- Scrollback buffer
+- ANSI color support
+- Keyboard shortcuts
+
+### File Diff Viewer
+
+**Single file diffs:**
+```typescript
+// FileDiffModal component
+interface FileDiffModalProps {
+  filePath: string | null
+  worktreePath: string
+  onClose: () => void
+}
+```
+
+**Features:**
+- Side-by-side (split) view
+- Unified diff view
+- Syntax highlighting
+- Line numbers
+- Expand/collapse hunks
+- Status badges (new, deleted, modified, renamed)
+
+**Implementation:**
+```typescript
+// Uses @pierre/diffs library
+import { FileDiff, parsePatchFiles } from '@pierre/diffs'
+
+// Fetches git diff
+const diff = await getGitDiff(worktreePath, 'uncommitted')
+const parsed = parsePatchFiles(diff.patch)
+```
+
+**Diff types:**
+```typescript
+type DiffType = 
+  | 'uncommitted'     // Working directory changes
+  | 'staged'          // Staged changes
+  | 'branch'          // Branch vs base branch
+  | 'commit'          // Specific commit
+```
+
+**Theme support:**
+- Respects app theme (light/dark/system)
+- Syntax highlighting matches settings
+- Configurable color schemes
+
+### Git Diff Modal
+
+**Full repository diffs:**
+```typescript
+// GitDiffModal component (lazy-loaded)
+interface GitDiffModalProps {
+  isOpen: boolean
+  onClose: () => void
+  diffType: DiffType
+  commitHash?: string
+}
+```
+
+**Features:**
+- Multiple file diffs in one view
+- File tree navigation
+- Expand/collapse files
+- Search within diffs
+- Export diff as patch
+- Jump to file in editor
+
+**Performance:**
+- Lazy-loaded (code splitting)
+- Virtual scrolling for large diffs
+- Syntax highlighting on-demand
+- Debounced search
+
+### File Preview
+
+**In-chat file mentions:**
+```typescript
+// Message content: "See <file>src/components/App.tsx</file>"
+// Renders as clickable badge
+interface FileMention {
+  path: string
+  displayName: string
+}
+```
+
+**Preview modal:**
+```typescript
+// FileContentModal component
+interface FileContentModalProps {
+  filePath: string | null
+  worktreePath: string
+  onClose: () => void
+}
+```
+
+**Features:**
+- Syntax highlighting (via Shiki)
+- Line numbers
+- Copy button
+- Open in editor button
+- Theme-aware
+
+**Supported languages:**
+- JavaScript/TypeScript
+- Rust
+- Python
+- Go
+- HTML/CSS
+- JSON/YAML
+- Markdown
+- And 100+ more via Shiki
+
+### Editor Integration
+
+**Supported editors:**
+```typescript
+type EditorApp = 'zed' | 'vscode' | 'cursor' | 'xcode'
+
+const editorOptions = [
+  { value: 'zed', label: 'Zed' },
+  { value: 'vscode', label: 'VS Code' },
+  { value: 'cursor', label: 'Cursor' },
+  { value: 'xcode', label: 'Xcode' },
+]
+```
+
+**Opening files:**
+```typescript
+// Tauri command: open_in_editor
+invoke('open_in_editor', {
+  path: '/path/to/file.ts',
+  editor: 'zed',
+  line: 42  // Optional line number
+})
+```
+
+**URL schemes:**
+- Zed: `zed://file/path?line=42`
+- VS Code: `vscode://file/path:42`
+- Cursor: `cursor://file/path:42`
+- Xcode: Opens via `xed` command
+
+**Supported from:**
+- File mention badges
+- Diff viewer "Open" buttons  
+- File preview "Edit" buttons
+- Right-click context menus
+- Review findings (jump to file:line)
+
+### Inline Code Editor
+
+**CodeMirror 6 integration:**
+```typescript
+interface FileEditMode {
+  mode: 'inline' | 'external'
+}
+```
+
+**Features:**
+- Syntax highlighting
+- Line numbers
+- Bracket matching
+- Auto-indentation
+- Vim keybindings (optional)
+- Theme support
+
+**Use cases:**
+- Quick edits during review
+- Small file changes
+- JSON/config editing
+- Viewing generated code
+
+**Configuration:**
+```typescript
+interface AppPreferences {
+  file_edit_mode: FileEditMode
+  // 'inline': Edit in Jean (CodeMirror)
+  // 'external': Open in configured editor
+}
+```
+
+### Syntax Highlighting
+
+**Shiki integration:**
+```typescript
+interface AppPreferences {
+  syntax_theme_dark: SyntaxTheme
+  syntax_theme_light: SyntaxTheme
+}
+
+// Available themes
+type SyntaxTheme =
+  | 'vitesse-black'
+  | 'vitesse-dark'
+  | 'github-dark'
+  | 'dracula'
+  | 'nord'
+  | 'catppuccin-mocha'
+  | 'one-dark-pro'
+  | 'tokyo-night'
+  // ... and more
+```
+
+**Features:**
+- 100+ bundled languages
+- 20+ bundled themes
+- Accurate syntax parsing
+- Tree-sitter based
+- Supports code blocks in chat
+
+### File System Browser
+
+**Worktree file tree:**
+- Hierarchical folder structure
+- Expand/collapse folders
+- File type icons
+- Search/filter
+- Quick open
+- Right-click actions
+
+**Actions:**
+- Preview file
+- Open in editor
+- Copy path
+- Reveal in Finder/Explorer
+- Show git status
+- View file diff
+
+## How to Use
+
+### Using the Terminal
+
+**Open terminal:**
+1. Click terminal icon in bottom toolbar
+2. Or press Cmd/Ctrl + `
+3. Terminal panel slides up
+
+**Resize panel:**
+- Drag resize handle
+- Double-click handle to collapse
+- Min/max sizes enforced
+
+**Multiple terminals:**
+1. Click "+" in terminal tabs
+2. New terminal spawns
+3. Switch with tabs or Cmd/Ctrl + 1-9
+
+**Close terminal:**
+- Click X on tab
+- Or type `exit` in shell
+- Terminal process killed immediately
+
+### Viewing File Diffs
+
+**From file mentions:**
+1. Hover over file mention in chat
+2. Click "View Diff" button
+3. Diff modal opens
+
+**From toolbar:**
+1. Click "Diff" button
+2. Choose diff type:
+   - Uncommitted changes
+   - Staged changes
+   - Branch diff
+3. Modal shows all changed files
+
+**Switch view modes:**
+- Click split/unified toggle
+- Split: Side-by-side comparison
+- Unified: Traditional patch view
+
+### Previewing Files
+
+**From chat:**
+1. Click file mention badge
+2. Preview modal opens
+3. View syntax-highlighted content
+4. Click "Open in Editor" to edit
+
+**From file tree:**
+1. Click file in sidebar
+2. Preview loads inline
+3. Or double-click to open in editor
+
+### Opening in Editor
+
+**Configure default editor:**
+1. Settings (Cmd/Ctrl + ,)
+2. Interface section
+3. Editor dropdown
+4. Select preferred editor
+
+**Quick open:**
+- Cmd/Ctrl + click file mention
+- Right-click → Open in Editor
+- Keyboard shortcut on file tree item
+
+**Jump to line:**
+- From review findings
+- From error messages
+- From search results
+- Editor opens at specific line
+
+### Syntax Theme Customization
+
+**Change theme:**
+1. Settings → Interface
+2. Syntax Theme (Dark) or (Light)
+3. Choose from dropdown
+4. Preview updates immediately
+
+**Per-mode themes:**
+- Separate themes for light and dark mode
+- Automatically switches with app theme
+- System theme detection supported
+
+## Configuration Options
+
+### Settings → Interface
+
+**Terminal:**
+```typescript
+terminal: TerminalApp  // Default: 'terminal'
+// For opening external terminal (separate from integrated)
+```
+
+**Editor:**
+```typescript
+editor: EditorApp      // Default: 'zed'
+file_edit_mode: FileEditMode  // Default: 'external'
+```
+
+**Syntax Themes:**
+```typescript
+syntax_theme_dark: SyntaxTheme    // Default: 'vitesse-black'
+syntax_theme_light: SyntaxTheme   // Default: 'github-light'
+```
+
+### Settings → Keybindings
+
+**Terminal shortcuts:**
+```typescript
+'toggle_terminal': 'Cmd+`'        // Open/close terminal
+'new_terminal': 'Cmd+Shift+`'     // New terminal tab
+```
+
+**File shortcuts:**
+```typescript
+'quick_open': 'Cmd+P'             // Quick file picker
+'reveal_in_finder': 'Cmd+Shift+R' // Show in file manager
+```
+
+## Best Practices
+
+### Terminal Usage
+
+**When to use integrated terminal:**
+- Quick commands during chat
+- Running tests
+- Git operations
+- Build scripts
+- File operations
+
+**When to use external terminal:**
+- Long-running processes
+- Multiple panes needed
+- Advanced shell features
+- Terminal multiplexing (tmux, screen)
+
+**Performance tips:**
+- Close unused terminals
+- Clear scrollback buffer
+- Avoid excessive output
+- Use external terminal for heavy tasks
+
+### File Diff Workflows
+
+**Before committing:**
+1. Review uncommitted diff
+2. Check each changed file
+3. Verify no debug code
+4. Ensure tests pass
+5. Stage and commit
+
+**During code review:**
+1. Open branch diff
+2. Review each file systematically
+3. Note concerns in findings
+4. Request changes or approve
+
+**Debugging:**
+1. Compare working vs broken commit
+2. Identify changed lines
+3. Narrow down regression
+4. Fix and verify
+
+### Editor Integration
+
+**Optimize workflow:**
+- Set editor to primary development tool
+- Use inline editing for quick tweaks only
+- External editor for substantial changes
+- Keep editor and Jean side-by-side
+
+**File organization:**
+- Consistent project structure
+- Editor workspace synced with worktree
+- Use editor's file tree for navigation
+- Use Jean for AI assistance
+
+### Syntax Highlighting
+
+**Theme selection:**
+- Match editor theme for consistency
+- High contrast for readability
+- Consider color blindness
+- Test in both light and dark modes
+
+**Popular combinations:**
+```
+Dark mode:
+  Code: vitesse-black, github-dark, dracula
+  Terminal: Same as code theme
+
+Light mode:
+  Code: github-light, vitesse-light
+  Terminal: Same as code theme
+```
+
+### Performance Optimization
+
+**Terminal:**
+- Limit scrollback buffer
+- Close inactive terminals
+- Avoid cat-ing large files
+- Use less/more for viewing
+
+**Diff viewer:**
+- Collapse unchanged sections
+- Focus on specific files
+- Use search to find relevant changes
+- Export large diffs as patches
+
+**File preview:**
+- Large files (> 1MB) may be slow
+- Disable syntax highlighting if needed
+- Use external editor for large files
+- Clear preview cache periodically
+
+### Keyboard Shortcuts
+
+**Efficient navigation:**
+```
+Cmd/Ctrl + ` - Toggle terminal
+Cmd/Ctrl + P - Quick open file
+Cmd/Ctrl + K - Open canvas
+Cmd/Ctrl + L - Clear chat
+Cmd/Ctrl + Enter - Send message
+```
+
+**Terminal:**
+```
+Ctrl + C - Interrupt process
+Ctrl + D - Exit shell
+Ctrl + L - Clear screen
+Ctrl + R - Search history
+```
+
+**Editor:**
+```
+Cmd/Ctrl + O - Open file
+Cmd/Ctrl + S - Save file (in inline editor)
+Cmd/Ctrl + F - Find in file
+Esc - Close preview
+```
+
+### Troubleshooting
+
+**Terminal not working:**
+- Check shell path in settings
+- Verify terminal app installed
+- Review app logs for errors
+- Try resetting terminal
+
+**Diff viewer blank:**
+- Ensure git repository initialized
+- Check for uncommitted changes
+- Verify working directory correct
+- Refresh with Cmd/Ctrl + R
+
+**Editor won't open:**
+- Verify editor installed
+- Check URL scheme registered
+- Test with `open vscode://file/test.txt`
+- Reinstall editor if needed
+
+**Syntax highlighting missing:**
+- Language not supported (check Shiki docs)
+- Theme not loaded (try switching)
+- File extension unrecognized
+- Use plain text fallback
+
+### Advanced Usage
+
+**Terminal automation:**
+```bash
+# Add to ~/.zshrc or ~/.bashrc
+alias jt='cd $(pwd)'  # Jean terminal helper
+function jpwd() { echo $(pwd) | pbcopy }  # Copy path
+```
+
+**Custom editor commands:**
+```bash
+# Open at line in Zed
+function jzed() {
+  open "zed://file/${1}?line=${2:-1}"
+}
+
+# Usage: jzed src/App.tsx 42
+```
+
+**Diff export:**
+```bash
+# Export branch diff as patch
+gh pr diff > feature.patch
+
+# Apply patch
+git apply feature.patch
+```

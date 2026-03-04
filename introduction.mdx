@@ -1,0 +1,192 @@
+---
+title: Introduction
+description: Learn about Jean, a powerful desktop AI assistant for managing projects, worktrees, and chat sessions with Claude CLI, Codex CLI, and OpenCode
+---
+
+# Introduction to Jean
+
+Jean is an opinionated native desktop app that gives you a powerful interface for working with Claude CLI, Codex CLI, and OpenCode across multiple projects. It has strong opinions about how AI-assisted development should work — managing git worktrees, chat sessions, terminals, and GitHub integrations in one cohesive workflow.
+
+<Note>
+No vendor lock-in. Everything runs locally on your machine with your own Claude CLI, Codex CLI, or OpenCode installation.
+</Note>
+
+## What is Jean?
+
+Jean is a desktop AI assistant designed for developers who want to:
+
+- Manage multiple projects and git worktrees from a single interface
+- Run AI-assisted coding sessions with full context and control
+- Automate common development workflows (code review, commit messages, PR creation)
+- Integrate GitHub issues, pull requests, and workflows seamlessly
+- Switch between multiple AI backends (Claude CLI, Codex CLI, OpenCode)
+
+## Key Features
+
+### Project & Worktree Management
+
+- **Multi-project support** with custom avatars and folder organization
+- **Git worktree automation** - create, archive, restore, and delete worktrees
+- **Per-project worktree locations** - configure custom base directories
+- **Worktree status tracking** - PR status, CI checks, git metrics
+
+### Session Management
+
+- **Multiple sessions per worktree** - run parallel conversations in different contexts
+- **Execution modes** - Plan (read-only), Build (auto-approve edits), Yolo (auto-approve all)
+- **Session archiving and recovery** - never lose your conversation history
+- **Auto-naming** - AI-generated names for sessions and branches
+- **Canvas views** - visual grid layouts for managing sessions
+
+### AI Chat Integration
+
+<CardGroup cols={3}>
+  <Card title="Claude CLI" icon="message-bot">
+    Full support for Claude Opus, Sonnet, and Haiku models
+  </Card>
+  <Card title="Codex CLI" icon="code">
+    DeepSeek-based coding assistant with reasoning capabilities
+  </Card>
+  <Card title="OpenCode" icon="terminal">
+    Multi-model support with custom provider profiles
+  </Card>
+</CardGroup>
+
+**Features:**
+- Model selection (Opus, Sonnet, Haiku)
+- Thinking/effort level controls
+- MCP server support with per-project configuration
+- File mentions and image support
+- Custom system prompts (global and per-project)
+- Token usage tracking
+
+### Magic Commands
+
+Jean includes powerful AI-driven automation features:
+
+- **Investigate** - Analyze GitHub issues, PRs, workflows, and security alerts
+- **Code Review** - AI-powered code review with finding tracking
+- **Commit Messages** - Generate semantic commit messages from staged changes
+- **PR Content** - Auto-generate PR titles and descriptions
+- **Merge Conflicts** - AI-assisted conflict resolution
+- **Release Notes** - Generate changelog from git history
+
+### GitHub Integration
+
+- **Issue & PR investigation** - Load full context into chat sessions
+- **Checkout PRs as worktrees** - Test and review PRs in isolated environments
+- **Auto-archive on PR merge** - Clean up merged worktrees automatically
+- **Workflow investigation** - Debug failed CI/CD runs
+- **Linear integration** - Investigate Linear issues with full context
+
+### Developer Tools
+
+- **Integrated terminal** with PTY support
+- **Open in editor** - Launch Zed, VS Code, Cursor, or Xcode
+- **Git status viewer** - Real-time worktree status
+- **Diff viewer** - Unified and side-by-side views
+- **File tree with preview** - Browse and edit files inline
+
+### Remote Access
+
+- **Built-in HTTP server** with WebSocket support
+- **Token-based authentication** for secure access
+- **Web browser access** - Use Jean from any device
+
+### Customization
+
+- **Themes** - Light, dark, and system-adaptive
+- **Custom fonts** - UI and chat font customization
+- **Configurable keybindings** - Personalize keyboard shortcuts
+- **Custom AI prompts** - Tailor magic command behaviors
+- **Syntax highlighting themes** - Choose your preferred code theme
+
+## Architecture
+
+Jean is built with modern, performant technologies:
+
+```
+┌─────────────────────────────────────┐
+│          Frontend (React)           │
+│   React 19 • TypeScript • Vite     │
+│   Tailwind CSS v4 • shadcn/ui v4    │
+│   Zustand v5 • TanStack Query       │
+│   CodeMirror 6 • xterm.js          │
+└──────────────┬──────────────────────┘
+               │ Tauri v2 Bridge
+┌──────────────▼──────────────────────┐
+│          Backend (Rust)             │
+│    File System • Git Operations     │
+│    Process Management (PTY)         │
+│    CLI Integration (Claude/Codex)   │
+│    HTTP Server (Axum)               │
+└─────────────────────────────────────┘
+```
+
+**Technology Stack:**
+
+- **Tauri v2** - Lightweight native desktop framework
+- **React 19** - Modern UI with concurrent features
+- **Rust** - High-performance backend operations
+- **TypeScript** - Type-safe frontend development
+- **Zustand** - Lightweight state management
+- **TanStack Query** - Async data synchronization
+- **CodeMirror 6** - Powerful code editing
+- **xterm.js** - Terminal emulation
+
+<Tip>
+Jean's architecture separates UI state (Zustand) from persistent data (TanStack Query + Rust backend), providing excellent performance and reliability.
+</Tip>
+
+## Who Should Use Jean?
+
+Jean is ideal for:
+
+- **Software engineers** working on multiple projects simultaneously
+- **Open source maintainers** managing PRs and issues at scale
+- **Development teams** using git worktrees for parallel feature development
+- **AI-assisted developers** who want control over their AI tooling
+- **Power users** who prefer keyboard-driven workflows
+
+## Platform Support
+
+<CardGroup cols={3}>
+  <Card title="macOS" icon="apple">
+    **Fully tested** - Primary development platform
+  </Card>
+  <Card title="Windows" icon="windows">
+    **Partial testing** - Most features work
+  </Card>
+  <Card title="Linux" icon="linux">
+    **Not tested** - Community feedback welcome
+  </Card>
+</CardGroup>
+
+## Philosophy
+
+Jean is opinionated about development workflows:
+
+1. **Worktrees over branches** - Isolate work in separate directories
+2. **Sessions over single chats** - Multiple focused conversations
+3. **Local control** - Your CLI, your API keys, your data
+4. **Git-centric** - Deep integration with git operations
+5. **Keyboard-first** - Efficient navigation with shortcuts
+
+Learn more about the philosophy behind Jean at [coollabs.io/philosophy](https://coollabs.io/philosophy/)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install Jean on your system
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get started with your first project
+  </Card>
+  <Card title="Core Concepts" icon="book" href="/core/projects-and-worktrees">
+    Learn the fundamentals
+  </Card>
+  <Card title="GitHub" icon="github" href="https://github.com/coollabsio/jean">
+    Star us on GitHub
+  </Card>
+</CardGroup>

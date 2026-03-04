@@ -1,97 +1,292 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: Jean Documentation
+description: Your AI-powered development assistant for managing projects, worktrees, and chat sessions
+mode: custom
 ---
 
-## Setting up
+<div className="relative overflow-hidden bg-[#121212] dark:bg-[#0f1117]">
+  {/* Hero Section */}
+  <div className="relative py-20 sm:py-24 lg:py-28">
+    <div className="mx-auto max-w-7xl px-6 lg:px-8">
+      <div className="mx-auto max-w-3xl text-center">
+        <h1 className="text-4xl font-bold tracking-tight text-gray-100 dark:text-white sm:text-5xl lg:text-6xl">
+          Your AI Development Environment
+        </h1>
+        <p className="mt-6 text-lg leading-8 text-gray-400 dark:text-gray-300 max-w-2xl mx-auto">
+          Jean is a desktop AI assistant that helps you manage multiple projects, git worktrees, and chat sessions with Claude CLI, Codex CLI, and OpenCode in one unified interface.
+        </p>
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+          <a
+            href="/quickstart"
+            className="rounded-lg bg-[#844cfb] px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-[#9a66fc] transition-colors no-underline"
+          >
+            Get Started
+          </a>
+          <a
+            href="/introduction"
+            className="rounded-lg border border-white/30 bg-white/10 px-6 py-3 text-base font-semibold text-white hover:bg-white/20 transition-colors no-underline"
+          >
+            Learn More
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-Get your documentation site up and running in minutes.
+{/* Quick Start Section */}
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="text-center mb-12">
+    <h2 className="text-3xl font-semibold text-gray-900 dark:text-white">
+      Get started in minutes
+    </h2>
+    <p className="mt-4 text-base text-gray-600 dark:text-gray-400">
+      Follow these steps to install Jean and start your first AI-powered development session
+    </p>
+  </div>
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+  <Steps>
+    <Step title="Download and install Jean">
+      Download the latest version for your platform from [GitHub Releases](https://github.com/coollabsio/jean/releases) or install via Homebrew on macOS:
+      
+      ```bash
+      brew tap coollabsio/jean
+      brew install --cask jean
+      ```
+    </Step>
+    
+    <Step title="Install Claude CLI, Codex CLI, or OpenCode">
+      Jean works with your choice of AI backend. Install at least one:
+      
+      - **Claude CLI**: Install from Anthropic's official CLI
+      - **Codex CLI**: Install OpenAI's Codex CLI tool
+      - **OpenCode**: Install the OpenCode CLI assistant
+      
+      See the [installation guide](/installation) for detailed instructions on each backend.
+    </Step>
+    
+    <Step title="Add your first project">
+      Launch Jean and add a git repository:
+      
+      1. Click **Add Project** in the sidebar
+      2. Select your repository directory
+      3. Jean will automatically detect the default branch
+      
+      <Note>
+        Jean uses git worktrees to create isolated development environments for each task or feature.
+      </Note>
+    </Step>
+    
+    <Step title="Create a worktree and start chatting">
+      Create your first worktree and begin an AI chat session:
+      
+      1. Click **New Worktree** for your project
+      2. Jean creates a new git worktree with a unique branch
+      3. Start chatting with your AI assistant to build features, fix bugs, or explore code
+      
+      <Tip>
+        Use execution modes (Plan, Build, Yolo) to control how the AI approaches tasks.
+      </Tip>
+    </Step>
+  </Steps>
+</div>
 
-## Make it yours
+{/* Features Grid */}
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="text-center mb-12">
+    <h2 className="text-3xl font-semibold text-gray-900 dark:text-white">
+      Everything you need for AI-powered development
+    </h2>
+    <p className="mt-4 text-base text-gray-600 dark:text-gray-400">
+      Powerful features designed to streamline your development workflow
+    </p>
+  </div>
 
-Design a docs site that looks great and empowers your users.
+  <CardGroup cols={2}>
+    <Card title="Multi-Project Management" icon="folder-tree" href="/features/project-management">
+      Organize multiple repositories with custom avatars, MCP servers, and per-project AI settings
+    </Card>
+    <Card title="Git Worktree Automation" icon="code-branch" href="/features/worktree-automation">
+      Automatically create isolated git worktrees for each task with branch management
+    </Card>
+    <Card title="AI Chat Integration" icon="comments" href="/features/ai-integration">
+      Chat with Claude, Codex, or OpenCode with model selection, thinking levels, and custom prompts
+    </Card>
+    <Card title="Magic Commands" icon="wand-magic-sparkles" href="/features/magic-commands">
+      AI-powered PR creation, code review, commit messages, and GitHub issue investigation
+    </Card>
+    <Card title="Session Management" icon="layer-group" href="/features/session-management">
+      Multiple chat sessions per worktree with archiving, recovery, and canvas views
+    </Card>
+    <Card title="GitHub Integration" icon="github" href="/features/github-integration">
+      Investigate issues and PRs, checkout PRs as worktrees, auto-archive on merge
+    </Card>
+    <Card title="Developer Tools" icon="terminal" href="/features/developer-tools">
+      Integrated terminal, diff viewer, file preview, and open in your favorite editor
+    </Card>
+    <Card title="Remote Web Access" icon="globe" href="/features/remote-access">
+      Built-in HTTP server with WebSocket support for browser-based access
+    </Card>
+  </CardGroup>
+</div>
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+{/* Core Concepts */}
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="text-center mb-12">
+    <h2 className="text-3xl font-semibold text-gray-900 dark:text-white">
+      Core concepts
+    </h2>
+    <p className="mt-4 text-base text-gray-600 dark:text-gray-400">
+      Understand the building blocks of Jean
+    </p>
+  </div>
 
-## Create beautiful pages
+  <CardGroup cols={2}>
+    <Card title="Projects and Worktrees" icon="diagram-project" href="/core/projects-and-worktrees">
+      Learn how Jean organizes repositories and creates isolated development environments
+    </Card>
+    <Card title="Sessions" icon="messages" href="/core/sessions">
+      Understand chat sessions, context management, and session lifecycle
+    </Card>
+    <Card title="AI Chat" icon="robot" href="/core/ai-chat">
+      Explore AI backends, model selection, and prompt customization
+    </Card>
+    <Card title="Execution Modes" icon="sliders" href="/core/execution-modes">
+      Master Plan, Build, and Yolo modes for different development workflows
+    </Card>
+  </CardGroup>
+</div>
 
-Everything you need to create world-class documentation.
+{/* Popular Guides */}
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="text-center mb-12">
+    <h2 className="text-3xl font-semibold text-gray-900 dark:text-white">
+      Popular guides
+    </h2>
+    <p className="mt-4 text-base text-gray-600 dark:text-gray-400">
+      Step-by-step tutorials for common tasks
+    </p>
+  </div>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <a href="/guides/setting-up-projects" className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#844cfb] dark:hover:border-[#844cfb] overflow-hidden transition-colors no-underline bg-white dark:bg-[#1a1d27]">
+      <div className="p-6">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 group-hover:text-[#844cfb] dark:group-hover:text-[#844cfb]">
+          Setting up projects
+        </h3>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          Configure projects with custom avatars, MCP servers, and AI backend preferences
+        </p>
+        <div className="mt-4 flex items-center text-sm font-medium text-[#844cfb] group-hover:text-[#9a66fc]">
+          Read guide
+          <svg className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
 
-## Need inspiration?
+    <a href="/guides/using-magic-commands" className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#844cfb] dark:hover:border-[#844cfb] overflow-hidden transition-colors no-underline bg-white dark:bg-[#1a1d27]">
+      <div className="p-6">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 group-hover:text-[#844cfb] dark:group-hover:text-[#844cfb]">
+          Using magic commands
+        </h3>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          Leverage AI-powered commands for PR creation, code review, and GitHub workflows
+        </p>
+        <div className="mt-4 flex items-center text-sm font-medium text-[#844cfb] group-hover:text-[#9a66fc]">
+          Read guide
+          <svg className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+    <a href="/guides/github-workflows" className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#844cfb] dark:hover:border-[#844cfb] overflow-hidden transition-colors no-underline bg-white dark:bg-[#1a1d27]">
+      <div className="p-6">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 group-hover:text-[#844cfb] dark:group-hover:text-[#844cfb]">
+          GitHub workflows
+        </h3>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          Integrate with GitHub issues, PRs, and CI/CD workflows seamlessly
+        </p>
+        <div className="mt-4 flex items-center text-sm font-medium text-[#844cfb] group-hover:text-[#9a66fc]">
+          Read guide
+          <svg className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
+
+    <a href="/guides/customization" className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#844cfb] dark:hover:border-[#844cfb] overflow-hidden transition-colors no-underline bg-white dark:bg-[#1a1d27]">
+      <div className="p-6">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 group-hover:text-[#844cfb] dark:group-hover:text-[#844cfb]">
+          Customization
+        </h3>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          Personalize themes, fonts, keyboard shortcuts, and AI prompts to match your workflow
+        </p>
+        <div className="mt-4 flex items-center text-sm font-medium text-[#844cfb] group-hover:text-[#9a66fc]">
+          Read guide
+          <svg className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
+{/* Resources Section */}
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="text-center mb-12">
+    <h2 className="text-3xl font-semibold text-gray-900 dark:text-white">
+      Resources and community
+    </h2>
+    <p className="mt-4 text-base text-gray-600 dark:text-gray-400">
+      Get help, contribute, and stay updated
+    </p>
+  </div>
+
+  <CardGroup cols={3}>
+    <Card title="GitHub Repository" icon="github" href="https://github.com/coollabsio/jean">
+      View source code, report issues, and contribute to the project
+    </Card>
+    <Card title="Official Website" icon="globe" href="https://jean.build">
+      Learn more about Jean and download the latest version
+    </Card>
+    <Card title="API Reference" icon="code" href="/api/overview">
+      Explore the HTTP API for remote access and automation
+    </Card>
+  </CardGroup>
+</div>
+
+{/* CTA Footer */}
+<div className="mt-20 mb-16 max-w-5xl mx-auto px-6">
+  <div className="rounded-2xl bg-gradient-to-r from-[#844cfb] to-[#9a66fc] p-8 shadow-xl dark:shadow-2xl">
+    <div className="text-center">
+      <h2 className="text-2xl font-bold text-white sm:text-3xl">
+        Ready to supercharge your development workflow?
+      </h2>
+      <p className="mt-4 text-lg text-white/90">
+        Download Jean and start building with AI assistance today
+      </p>
+      <div className="mt-8 flex flex-wrap justify-center gap-4">
+        <a
+          href="/quickstart"
+          className="rounded-lg bg-white px-6 py-3 text-base font-semibold text-[#844cfb] hover:bg-gray-100 transition-colors no-underline shadow-lg"
+        >
+          Get Started Now
+        </a>
+        <a
+          href="https://github.com/coollabsio/jean/releases"
+          className="rounded-lg border-2 border-white bg-transparent px-6 py-3 text-base font-semibold text-white hover:bg-white/10 transition-colors no-underline"
+        >
+          Download Latest Release
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

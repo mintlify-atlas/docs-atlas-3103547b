@@ -1,122 +1,119 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Jean",
+  "theme": "aspen",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#844cfb",
+    "light": "#844cfb",
+    "dark": "#452d74"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "https://media.brand.dev/5ddfb2cd-0ae6-4865-bab5-0eafc479ea32.png",
+  "logo": {
+    "light": "https://media.brand.dev/51b38c6d-1e0a-44df-91d0-4993b58ba700.svg",
+    "dark": "https://media.brand.dev/51b38c6d-1e0a-44df-91d0-4993b58ba700.svg"
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/coollabsio/jean"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/coollabsio/jean",
+      "website": "https://jean.build"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Get Started",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "introduction",
+              "installation",
+              "quickstart"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Concepts",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "core/projects-and-worktrees",
+              "core/sessions",
+              "core/ai-chat",
+              "core/execution-modes"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Features",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "features/project-management",
+              "features/worktree-automation",
+              "features/session-management",
+              "features/ai-integration",
+              "features/magic-commands",
+              "features/github-integration",
+              "features/developer-tools",
+              "features/remote-access"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Guides",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "guides/setting-up-projects",
+              "guides/working-with-worktrees",
+              "guides/managing-sessions",
+              "guides/using-magic-commands",
+              "guides/github-workflows",
+              "guides/customization",
+              "guides/keyboard-shortcuts"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/mcp-servers",
+              "advanced/custom-prompts",
+              "advanced/remote-web-access",
+              "advanced/multi-backend-setup",
+              "advanced/performance-tips"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/configuration",
+              "reference/cli-backends",
+              "reference/keyboard-shortcuts",
+              "reference/troubleshooting",
+              "reference/faq"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Overview",
             "pages": [
-              "api-reference/introduction"
+              "api/overview",
+              "api/authentication"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Endpoints",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api/projects",
+              "api/worktrees",
+              "api/sessions",
+              "api/chat"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

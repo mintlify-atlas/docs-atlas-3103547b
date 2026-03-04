@@ -1,0 +1,728 @@
+---
+title: 'Worktrees API'
+description: 'Create and manage Git worktrees for isolated development'
+---
+
+## Overview
+
+The Worktrees API provides functionality for creating and managing Git worktrees - isolated working directories that share the same repository history but allow working on different branches simultaneously.
+
+## Data Structures
+
+### Worktree
+
+<ResponseField name="id" type="string" required>
+  Unique identifier (UUID v4)
+</ResponseField>
+
+<ResponseField name="project_id" type="string" required>
+  Foreign key to the parent project
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  Random workspace name (e.g., "fuzzy-tiger")
+</ResponseField>
+
+<ResponseField name="path" type="string" required>
+  Absolute path to worktree (defaults to ~/jean/PROJECT_NAME/WORKTREE_NAME)
+</ResponseField>
+
+<ResponseField name="branch" type="string" required>
+  Git branch name (same as workspace name)
+</ResponseField>
+
+<ResponseField name="created_at" type="number" required>
+  Unix timestamp when worktree was created
+</ResponseField>
+
+<ResponseField name="session_type" type="'worktree' | 'base'" default="worktree">
+  Type of session (worktree = git worktree, base = base directory)
+</ResponseField>
+
+<ResponseField name="order" type="number" default={0}>
+  Display order within project (lower = higher in list)
+</ResponseField>
+
+<ResponseField name="pr_number" type="number | null">
+  GitHub PR number (if a PR has been created)
+</ResponseField>
+
+<ResponseField name="pr_url" type="string | null">
+  GitHub PR URL (if a PR has been created)
+</ResponseField>
+
+<ResponseField name="issue_number" type="number | null">
+  GitHub issue number (if created from an issue)
+</ResponseField>
+
+<ResponseField name="label" type="object | null">
+  User-assigned label with color
+  
+  <Expandable title="Label properties">
+    <ResponseField name="name" type="string" required>
+      Label text (e.g., "In Progress")
+    </ResponseField>
+    <ResponseField name="color" type="string" required>
+      Hex color code (e.g., "#eab308")
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="archived_at" type="number | null">
+  Unix timestamp when worktree was archived (null = not archived)
+</ResponseField>
+
+<ResponseField name="last_opened_at" type="number | null">
+  Unix timestamp when worktree was last opened/viewed
+</ResponseField>
+
+### Cached Status Fields
+
+Worktrees maintain cached Git and GitHub status for performance:
+
+<ResponseField name="cached_pr_status" type="string | null">
+  PR status: "draft" | "open" | "review" | "merged" | "closed"
+</ResponseField>
+
+<ResponseField name="cached_check_status" type="string | null">
+  CI check status: "success" | "failure" | "pending" | "error"
+</ResponseField>
+
+<ResponseField name="cached_behind_count" type="number | null">
+  Commits behind base branch
+</ResponseField>
+
+<ResponseField name="cached_ahead_count" type="number | null">
+  Commits ahead of base branch
+</ResponseField>
+
+<ResponseField name="cached_uncommitted_added" type="number | null">
+  Lines added in working directory
+</ResponseField>
+
+<ResponseField name="cached_uncommitted_removed" type="number | null">
+  Lines removed in working directory
+</ResponseField>
+
+<ResponseField name="cached_branch_diff_added" type="number | null">
+  Lines added vs base branch
+</ResponseField>
+
+<ResponseField name="cached_branch_diff_removed" type="number | null">
+  Lines removed vs base branch
+</ResponseField>
+
+<ResponseField name="cached_unpushed_count" type="number | null">
+  Commits not yet pushed to origin
+</ResponseField>
+
+<ResponseField name="cached_status_at" type="number | null">
+  Unix timestamp when status was last checked
+</ResponseField>
+
+## Commands
+
+### List Worktrees
+
+Retrieve all worktrees for a project.
+
+<ParamField path="projectId" type="string" required>
+  ID of the project
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const worktrees = await api.invoke('list_worktrees', {
+  projectId: '550e8400-e29b-41d4-a716-446655440000'
+});
+```
+
+```json Response
+[
+  {
+    "id": "770e8400-e29b-41d4-a716-446655440002",
+    "project_id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "fuzzy-tiger",
+    "path": "/Users/john/jean/my-app/fuzzy-tiger",
+    "branch": "fuzzy-tiger",
+    "created_at": 1704067400,
+    "session_type": "worktree",
+    "order": 0,
+    "cached_pr_status": "open",
+    "cached_check_status": "success",
+    "cached_uncommitted_added": 50,
+    "cached_uncommitted_removed": 10
+  }
+]
+```
+</CodeGroup>
+
+### Get Worktree
+
+Retrieve a specific worktree by ID.
+
+<ParamField path="worktreeId" type="string" required>
+  ID of the worktree
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const worktree = await api.invoke('get_worktree', {
+  worktreeId: '770e8400-e29b-41d4-a716-446655440002'
+});
+```
+</CodeGroup>
+
+### Create Worktree
+
+Create a new Git worktree.
+
+<ParamField path="projectId" type="string" required>
+  ID of the project
+</ParamField>
+
+<ParamField path="baseBranch" type="string">
+  Branch to create worktree from (defaults to project's default_branch)
+</ParamField>
+
+<ParamField path="customName" type="string">
+  Custom worktree name (defaults to random name like "fuzzy-tiger")
+</ParamField>
+
+<ParamField path="issueContext" type="object">
+  GitHub issue context
+  
+  <Expandable title="Issue context properties">
+    <ParamField path="number" type="number" required>
+      Issue number
+    </ParamField>
+    <ParamField path="title" type="string" required>
+      Issue title
+    </ParamField>
+    <ParamField path="body" type="string">
+      Issue description
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="prContext" type="object">
+  GitHub PR context
+  
+  <Expandable title="PR context properties">
+    <ParamField path="number" type="number" required>
+      PR number
+    </ParamField>
+    <ParamField path="title" type="string" required>
+      PR title
+    </ParamField>
+    <ParamField path="headRefName" type="string" required>
+      Source branch name
+    </ParamField>
+    <ParamField path="baseRefName" type="string" required>
+      Target branch name
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const worktree = await api.invoke('create_worktree', {
+  projectId: '550e8400-e29b-41d4-a716-446655440000',
+  baseBranch: 'main',
+  issueContext: {
+    number: 123,
+    title: 'Add authentication',
+    body: 'Implement JWT-based authentication'
+  }
+});
+```
+
+```json Response
+{
+  "id": "770e8400-e29b-41d4-a716-446655440002",
+  "project_id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "fuzzy-tiger",
+  "path": "/Users/john/jean/my-app/fuzzy-tiger",
+  "branch": "fuzzy-tiger",
+  "created_at": 1704067400,
+  "session_type": "worktree",
+  "issue_number": 123,
+  "order": 0
+}
+```
+</CodeGroup>
+
+### Delete Worktree
+
+Delete a worktree (moves to archive).
+
+<ParamField path="worktreeId" type="string" required>
+  ID of the worktree to delete
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+await api.invoke('delete_worktree', {
+  worktreeId: '770e8400-e29b-41d4-a716-446655440002'
+});
+```
+</CodeGroup>
+
+### Archive Worktree
+
+Archive a worktree without deleting files.
+
+<ParamField path="worktreeId" type="string" required>
+  ID of the worktree to archive
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+await api.invoke('archive_worktree', {
+  worktreeId: '770e8400-e29b-41d4-a716-446655440002'
+});
+```
+</CodeGroup>
+
+### Unarchive Worktree
+
+Restore an archived worktree.
+
+<ParamField path="worktreeId" type="string" required>
+  ID of the worktree to restore
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const worktree = await api.invoke('unarchive_worktree', {
+  worktreeId: '770e8400-e29b-41d4-a716-446655440002'
+});
+```
+</CodeGroup>
+
+### Rename Worktree
+
+Rename a worktree and its branch.
+
+<ParamField path="worktreeId" type="string" required>
+  ID of the worktree
+</ParamField>
+
+<ParamField path="newName" type="string" required>
+  New worktree name
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const worktree = await api.invoke('rename_worktree', {
+  worktreeId: '770e8400-e29b-41d4-a716-446655440002',
+  newName: 'auth-feature'
+});
+```
+</CodeGroup>
+
+### Update Worktree Label
+
+Set or clear a worktree's label.
+
+<ParamField path="worktreeId" type="string" required>
+  ID of the worktree
+</ParamField>
+
+<ParamField path="label" type="object | null" required>
+  Label object or null to clear
+  
+  <Expandable title="Label properties">
+    <ParamField path="name" type="string" required>
+      Label text
+    </ParamField>
+    <ParamField path="color" type="string" required>
+      Hex color code
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+await api.invoke('update_worktree_label', {
+  worktreeId: '770e8400-e29b-41d4-a716-446655440002',
+  label: {
+    name: 'In Progress',
+    color: '#3b82f6'
+  }
+});
+
+// Clear label
+await api.invoke('update_worktree_label', {
+  worktreeId: '770e8400-e29b-41d4-a716-446655440002',
+  label: null
+});
+```
+</CodeGroup>
+
+### Reorder Worktrees
+
+Reorder worktrees within a project.
+
+<ParamField path="projectId" type="string" required>
+  ID of the project
+</ParamField>
+
+<ParamField path="worktreeIds" type="string[]" required>
+  Array of worktree IDs in the desired order
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+await api.invoke('reorder_worktrees', {
+  projectId: '550e8400-e29b-41d4-a716-446655440000',
+  worktreeIds: [
+    '770e8400-e29b-41d4-a716-446655440002',
+    '880e8400-e29b-41d4-a716-446655440003'
+  ]
+});
+```
+</CodeGroup>
+
+## Git Operations
+
+### Fetch Worktrees Status
+
+Update cached Git/GitHub status for all worktrees in a project.
+
+<ParamField path="projectId" type="string" required>
+  ID of the project
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+await api.invoke('fetch_worktrees_status', {
+  projectId: '550e8400-e29b-41d4-a716-446655440000'
+});
+```
+</CodeGroup>
+
+### Has Uncommitted Changes
+
+Check if a worktree has uncommitted changes.
+
+<ParamField path="worktreeId" type="string" required>
+  ID of the worktree
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const hasChanges = await api.invoke('has_uncommitted_changes', {
+  worktreeId: '770e8400-e29b-41d4-a716-446655440002'
+});
+```
+
+```json Response
+true
+```
+</CodeGroup>
+
+### Get Git Diff
+
+Get the diff for a worktree.
+
+<ParamField path="worktreePath" type="string" required>
+  Absolute path to the worktree
+</ParamField>
+
+<ParamField path="diffType" type="string" required>
+  Type of diff: "working" | "staged" | "branch"
+</ParamField>
+
+<ParamField path="baseBranch" type="string">
+  Base branch for branch diff
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const diff = await api.invoke('get_git_diff', {
+  worktreePath: '/Users/john/jean/my-app/fuzzy-tiger',
+  diffType: 'working'
+});
+```
+
+```text Response
+diff --git a/src/app.js b/src/app.js
+index 1234567..abcdefg 100644
+--- a/src/app.js
++++ b/src/app.js
+@@ -10,6 +10,8 @@
+ function main() {
++  console.log('Starting app...');
+   initializeApp();
+ }
+```
+</CodeGroup>
+
+### Git Pull
+
+Pull changes from remote.
+
+<ParamField path="worktreePath" type="string" required>
+  Absolute path to the worktree
+</ParamField>
+
+<ParamField path="baseBranch" type="string" required>
+  Branch to pull from
+</ParamField>
+
+<ParamField path="remote" type="string">
+  Remote name (defaults to "origin")
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const result = await api.invoke('git_pull', {
+  worktreePath: '/Users/john/jean/my-app/fuzzy-tiger',
+  baseBranch: 'main',
+  remote: 'origin'
+});
+```
+
+```json Response
+{
+  "success": true,
+  "output": "Already up to date."
+}
+```
+</CodeGroup>
+
+### Git Push
+
+Push changes to remote.
+
+<ParamField path="worktreePath" type="string" required>
+  Absolute path to the worktree
+</ParamField>
+
+<ParamField path="prNumber" type="number">
+  PR number (for updating PR)
+</ParamField>
+
+<ParamField path="remote" type="string">
+  Remote name (defaults to "origin")
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const result = await api.invoke('git_push', {
+  worktreePath: '/Users/john/jean/my-app/fuzzy-tiger',
+  remote: 'origin'
+});
+```
+
+```json Response
+{
+  "success": true,
+  "output": "To github.com:user/repo.git\n   abc1234..def5678  fuzzy-tiger -> fuzzy-tiger"
+}
+```
+</CodeGroup>
+
+### Commit Changes
+
+Create a Git commit.
+
+<ParamField path="worktreeId" type="string" required>
+  ID of the worktree
+</ParamField>
+
+<ParamField path="message" type="string" required>
+  Commit message
+</ParamField>
+
+<ParamField path="stageAll" type="boolean" default={false}>
+  Stage all changes before committing
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const result = await api.invoke('commit_changes', {
+  worktreeId: '770e8400-e29b-41d4-a716-446655440002',
+  message: 'Add authentication system',
+  stageAll: true
+});
+```
+
+```json Response
+{
+  "success": true,
+  "commit_sha": "abc1234def5678"
+}
+```
+</CodeGroup>
+
+## Pull Request Operations
+
+### Save Worktree PR
+
+Associate a PR with a worktree.
+
+<ParamField path="worktreeId" type="string" required>
+  ID of the worktree
+</ParamField>
+
+<ParamField path="prNumber" type="number" required>
+  GitHub PR number
+</ParamField>
+
+<ParamField path="prUrl" type="string" required>
+  GitHub PR URL
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+await api.invoke('save_worktree_pr', {
+  worktreeId: '770e8400-e29b-41d4-a716-446655440002',
+  prNumber: 456,
+  prUrl: 'https://github.com/user/repo/pull/456'
+});
+```
+</CodeGroup>
+
+### Clear Worktree PR
+
+Remove PR association from a worktree.
+
+<ParamField path="worktreeId" type="string" required>
+  ID of the worktree
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+await api.invoke('clear_worktree_pr', {
+  worktreeId: '770e8400-e29b-41d4-a716-446655440002'
+});
+```
+</CodeGroup>
+
+### Open Pull Request
+
+Create a GitHub PR for a worktree.
+
+<ParamField path="worktreeId" type="string" required>
+  ID of the worktree
+</ParamField>
+
+<ParamField path="title" type="string">
+  PR title (auto-generated if omitted)
+</ParamField>
+
+<ParamField path="body" type="string">
+  PR description (auto-generated if omitted)
+</ParamField>
+
+<ParamField path="draft" type="boolean" default={false}>
+  Create as draft PR
+</ParamField>
+
+<CodeGroup>
+```javascript Request
+const result = await api.invoke('open_pull_request', {
+  worktreeId: '770e8400-e29b-41d4-a716-446655440002',
+  title: 'Add authentication system',
+  body: 'Implements JWT-based authentication with refresh tokens',
+  draft: false
+});
+```
+
+```json Response
+{
+  "pr_number": 456,
+  "pr_url": "https://github.com/user/repo/pull/456"
+}
+```
+</CodeGroup>
+
+## Events
+
+### worktree:creating
+
+Emitted when worktree creation starts (background operation).
+
+```json
+{
+  "type": "event",
+  "event": "worktree:creating",
+  "payload": {
+    "id": "770e8400-e29b-41d4-a716-446655440002",
+    "project_id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "fuzzy-tiger",
+    "path": "/Users/john/jean/my-app/fuzzy-tiger",
+    "branch": "fuzzy-tiger"
+  }
+}
+```
+
+### worktree:created
+
+Emitted when worktree creation completes successfully.
+
+```json
+{
+  "type": "event",
+  "event": "worktree:created",
+  "payload": {
+    "worktree": { /* full worktree object */ }
+  }
+}
+```
+
+### worktree:create_error
+
+Emitted when worktree creation fails.
+
+```json
+{
+  "type": "event",
+  "event": "worktree:create_error",
+  "payload": {
+    "id": "770e8400-e29b-41d4-a716-446655440002",
+    "project_id": "550e8400-e29b-41d4-a716-446655440000",
+    "error": "Failed to create worktree: ..."
+  }
+}
+```
+
+### worktree:status_updated
+
+Emitted when cached Git/GitHub status is updated.
+
+```json
+{
+  "type": "event",
+  "event": "worktree:status_updated",
+  "payload": {
+    "worktree_id": "770e8400-e29b-41d4-a716-446655440002",
+    "cached_pr_status": "open",
+    "cached_check_status": "success"
+  }
+}
+```
+
+## Error Codes
+
+| Error | Description |
+|-------|-------------|
+| `Worktree not found: {id}` | The specified worktree ID does not exist |
+| `Worktree name already exists: {name}` | A worktree with this name already exists in the project |
+| `Worktree path already exists: {path}` | The target path is already in use |
+| `Branch already exists: {branch}` | The branch name is already in use |
+| `No uncommitted changes to commit` | Cannot commit with no staged or unstaged changes |
+| `Failed to create worktree: {reason}` | Git worktree creation failed |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Sessions API" icon="messages" href="/api/sessions">
+    Manage chat sessions within worktrees
+  </Card>
+  <Card title="Chat API" icon="comment" href="/api/chat">
+    Send messages and interact with AI
+  </Card>
+</CardGroup>

@@ -1,0 +1,556 @@
+---
+title: 'FAQ'
+description: 'Frequently asked questions about Jean'
+---
+
+## General
+
+### What is Jean?
+
+Jean is a desktop AI assistant for managing multiple projects, worktrees, and chat sessions with Claude CLI, Codex CLI, and OpenCode. It provides a unified interface for AI-assisted development across multiple projects.
+
+### Is Jean free?
+
+Yes, Jean is free and open source. However, you need your own API keys for the AI backends:
+
+- **Claude CLI**: Requires Anthropic API key or Claude Pro subscription
+- **Codex CLI**: Requires OpenAI API access
+- **OpenCode**: Supports multiple providers (Anthropic, OpenAI, OpenRouter, local models)
+
+### What platforms does Jean support?
+
+- **macOS**: Fully supported (11+)
+- **Windows**: Supported (10+, Server 2019+)
+- **Linux**: Supported (glibc 2.31+)
+
+### How is Jean different from Claude.ai or ChatGPT?
+
+Jean is:
+- **Desktop-native**: Runs locally, no web browser needed
+- **Project-focused**: Manages multiple projects and worktrees
+- **Git-integrated**: Automatic worktree creation, commit messages, PR generation
+- **Session-persistent**: Chat history saved across restarts
+- **Multi-backend**: Switch between Claude, Codex, and OpenCode
+
+## Installation & Setup
+
+### How do I install Jean?
+
+**macOS (Homebrew)**:
+```bash
+brew tap coollabsio/jean
+brew install --cask jean
+```
+
+**Download**:
+- Visit https://jean.build
+- Download for your platform
+- Install and run
+
+### Do I need to install Claude CLI separately?
+
+No, Jean can install backends for you:
+
+1. Open Preferences (`Cmd+,`)
+2. Go to Backends tab
+3. Click "Install" for desired backend
+4. Follow authentication steps
+
+### How do I authenticate?
+
+Jean guides you through authentication on first launch:
+
+1. Select backend (Claude/Codex/OpenCode)
+2. Click "Authenticate"
+3. Follow provider-specific auth flow
+4. Return to Jean when complete
+
+Or authenticate via CLI:
+```bash
+claude auth
+codex auth
+opencode auth
+```
+
+## Usage
+
+### What is a worktree?
+
+A worktree is an isolated git working directory for a project. Jean uses `git worktree` to create separate branches without switching contexts in your main repository.
+
+**Benefits**:
+- Work on multiple features simultaneously
+- No need to stash changes
+- Each worktree has its own chat sessions
+
+### How do I create a worktree?
+
+1. Select project in sidebar
+2. Press `Cmd+N` or click "+" button
+3. Choose creation method:
+   - Blank worktree
+   - From GitHub issue
+   - From GitHub PR
+4. Jean creates branch and directory
+
+### What are execution modes?
+
+**Plan Mode**: AI writes plan first, you approve before execution
+
+**Build Mode**: AI executes immediately after approval (skip planning)
+
+**Yolo Mode**: AI executes without approval (autonomous)
+
+**Switch**: Press `Shift+Tab` to cycle through modes
+
+### How do I investigate a GitHub issue?
+
+1. Open project with GitHub remote
+2. Click Magic Commands (`Cmd+M`)
+3. Select "Investigate Issue"
+4. Enter issue number (e.g., `#123`)
+5. AI analyzes issue and proposes solution
+
+### How do I create a PR?
+
+**With AI-generated content**:
+1. Make commits in worktree
+2. Click Magic Commands (`Cmd+M`)
+3. Select "Create PR"
+4. AI generates title and description
+5. PR created automatically
+
+**Manual**:
+1. Push commits: `git push`
+2. Use GitHub UI to create PR
+
+### Can I use Jean without GitHub?
+
+Yes! Jean works with any git repository. GitHub features (issue investigation, PR creation, etc.) require GitHub remote and `gh` CLI, but core functionality works without it.
+
+## Configuration
+
+### Where are preferences stored?
+
+**macOS**: `~/Library/Application Support/io.coollabs.jean/preferences.json`
+
+**Linux**: `~/.config/jean/preferences.json`
+
+**Windows**: `%APPDATA%\jean\preferences.json`
+
+### How do I change the default model?
+
+1. Preferences > General
+2. **Selected Model** dropdown
+3. Choose model (Opus, Sonnet, Haiku, etc.)
+
+**Per-session**: Click model dropdown in chat toolbar
+
+### What is thinking level?
+
+Thinking level controls Claude's extended thinking:
+
+- **Off**: No thinking (fastest)
+- **Think**: 4K tokens thinking
+- **Megathink**: 10K tokens thinking
+- **Ultrathink**: 32K tokens thinking (slowest, most thorough)
+
+**Configure**: Preferences > General > Thinking Level
+
+### How do I customize magic prompts?
+
+1. Preferences > Magic Prompts
+2. Select prompt (e.g., "Investigate Issue")
+3. Click "Edit"
+4. Modify prompt text
+5. Save
+
+**Reset**: Click "Reset to Default"
+
+### What is jean.json?
+
+`jean.json` is a per-project configuration file for scripts:
+
+```json
+{
+  "scripts": {
+    "setup": "npm install",
+    "run": "npm run dev",
+    "teardown": "rm -rf node_modules"
+  }
+}
+```
+
+- **setup**: Runs after worktree creation
+- **run**: Triggered by `Cmd+R`
+- **teardown**: Runs before worktree deletion
+
+## MCP Servers
+
+### What are MCP servers?
+
+MCP (Model Context Protocol) servers extend AI capabilities with tools:
+
+- **Filesystem**: Read/write files
+- **GitHub**: Access GitHub API
+- **Database**: Query databases
+- **Custom**: Build your own tools
+
+### How do I add an MCP server?
+
+**For Claude**:
+
+Edit `~/.claude.json`:
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/dir"]
+    }
+  }
+}
+```
+
+**For Codex**:
+
+Edit `~/.codex/config.toml`:
+```toml
+[[mcp_servers]]
+name = "filesystem"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/dir"]
+```
+
+**For OpenCode**:
+
+Edit `~/.config/opencode/opencode.json`:
+```json
+{
+  "mcpServers": {
+    "filesystem": {...}
+  }
+}
+```
+
+Restart Jean to reload config.
+
+### How do I disable an MCP server?
+
+1. Preferences > MCP Servers
+2. Find server in list
+3. Toggle off
+4. Or set `"disabled": true` in config file
+
+## Remote Access
+
+### How do I access Jean remotely?
+
+1. Preferences > Remote Access
+2. Enable "HTTP Server"
+3. Start server
+4. Visit URL from other device: `http://[ip]:3456?token=...`
+
+**Security**: Keep token secret. Enable "Localhost Only" for local testing.
+
+### Can multiple people use Jean simultaneously?
+
+Yes, via remote access. Each WebSocket client receives real-time updates.
+
+**Note**: Jean is designed for single-user workflows. Collaborative features are experimental.
+
+### How do I secure remote access?
+
+1. **Use token auth**: Keep default "Require Token" enabled
+2. **Localhost only**: Bind to 127.0.0.1 (default)
+3. **Firewall rules**: Restrict port access
+4. **VPN**: Use VPN instead of exposing to internet
+5. **HTTPS**: Set up reverse proxy with SSL (nginx, Caddy)
+
+## Troubleshooting
+
+### Jean is slow. How do I speed it up?
+
+1. **Reduce polling**:
+   - Preferences > Performance
+   - Increase git/remote poll intervals to 300s+
+
+2. **Archive old sessions**:
+   - Close unused sessions
+   - Delete old archives
+
+3. **Use faster models**:
+   - Switch to Haiku (Claude)
+   - Use mini models (Codex)
+
+4. **Disable features**:
+   - Turn off session recap
+   - Disable parallel execution prompt
+
+See **Performance Tips** guide for detailed optimizations.
+
+### Git commands are failing. What should I check?
+
+1. **Git installed?**
+   ```bash
+   git --version
+   ```
+
+2. **Repository valid?**
+   ```bash
+   cd /path/to/project
+   git status
+   ```
+
+3. **Git config set?**
+   ```bash
+   git config user.name
+   git config user.email
+   ```
+
+4. **SSH keys configured?** (for GitHub)
+   ```bash
+   ssh -T git@github.com
+   ```
+
+### Claude CLI not found. How do I fix this?
+
+1. **Install via Jean**: Preferences > Backends > Install
+2. **Or install manually**:
+   ```bash
+   brew install anthropics/claude/claude-cli
+   ```
+3. **Verify PATH**:
+   ```bash
+   which claude
+   ```
+4. **Restart Jean**
+
+### My worktree creation failed. Why?
+
+**Common causes**:
+
+1. **Branch exists**: Choose different name or delete old branch
+2. **Path exists**: Directory already at target location
+3. **Permissions**: No write access to worktrees directory
+4. **Git error**: Check `git worktree list`, run `git worktree prune`
+
+### How do I reset Jean to defaults?
+
+**Reset preferences**:
+1. Close Jean
+2. Delete preferences file (see "Where are preferences stored?")
+3. Restart Jean
+
+**Reset everything** (nuclear option):
+```bash
+# macOS
+rm -rf ~/Library/Application\ Support/io.coollabs.jean/
+
+# Linux
+rm -rf ~/.config/jean/
+
+# Windows
+rd /s /q "%APPDATA%\jean"
+```
+
+This deletes all sessions, projects, and preferences.
+
+## Advanced
+
+### Can I use multiple backends in one project?
+
+Yes! Each session can use a different backend:
+
+1. Create session
+2. Select backend from toolbar (Claude/Codex/OpenCode)
+3. Start chatting
+
+Switch backends between sessions, not within a session.
+
+### How do I use custom AI providers?
+
+For **Claude CLI**, create custom profiles:
+
+1. Preferences > Advanced > CLI Profiles
+2. Add profile (e.g., OpenRouter, MiniMax)
+3. Configure base URL and API key
+4. Select from provider dropdown
+
+For **OpenCode**, configure provider in `opencode.json`.
+
+### What is the parallel execution prompt?
+
+An experimental system prompt that encourages AI to use multiple sub-agents in parallel for faster execution.
+
+**Enable**: Preferences > Experimental > Parallel Execution Prompt
+
+**Effect**: AI launches multiple Task agents simultaneously instead of sequentially.
+
+### How do I contribute to Jean?
+
+See [CONTRIBUTING.md](https://github.com/coollabsio/jean/blob/main/CONTRIBUTING.md):
+
+1. Fork repository
+2. Clone: `git clone https://github.com/YOUR_USERNAME/jean.git`
+3. Install deps: `bun install`
+4. Run dev: `bun run tauri:dev`
+5. Make changes
+6. Submit PR
+
+### Where is the source code?
+
+https://github.com/coollabsio/jean
+
+### What license is Jean under?
+
+Jean is open source under the MIT License.
+
+## Data & Privacy
+
+### Where is my data stored?
+
+**Session data**: `~/Library/Application Support/io.coollabs.jean/sessions/`
+
+**Preferences**: `~/Library/Application Support/io.coollabs.jean/preferences.json`
+
+**Projects DB**: `~/Library/Application Support/io.coollabs.jean/projects.db`
+
+(Paths vary by platform)
+
+### Does Jean send data to external servers?
+
+Jean only communicates with:
+
+1. **AI providers** (Anthropic, OpenAI, etc.) - when you send messages
+2. **GitHub API** - when using GitHub features (via `gh` CLI)
+3. **Update server** - when checking for updates (can be disabled)
+
+**No telemetry** or analytics are collected by Jean itself.
+
+### Are my API keys secure?
+
+API keys are stored in CLI backend config files:
+
+- `~/.claude/settings.json`
+- `~/.codex/config.toml`
+- `~/.config/opencode/opencode.json`
+
+**Permissions**: Files are readable only by your user account.
+
+**Best practice**: Use environment variables instead of storing keys in config files.
+
+### Can I use Jean offline?
+
+No, Jean requires internet connection to communicate with AI providers. However:
+
+- Git operations work offline
+- UI and project management work offline
+- Only AI chat requires internet
+
+**Exception**: OpenCode with local models (Ollama) works offline.
+
+## Limits & Quotas
+
+### Are there limits on projects/worktrees/sessions?
+
+No hard limits. Practical limits depend on:
+
+- **Disk space**: Each worktree is a full git clone
+- **Memory**: Active sessions consume RAM
+- **Performance**: 50+ active sessions may slow down UI
+
+**Recommendation**: Archive old sessions regularly, keep active count < 20.
+
+### What are the rate limits?
+
+Rate limits are set by AI providers:
+
+- **Anthropic**: Varies by plan (Pro, Team, Enterprise)
+- **OpenAI**: Varies by tier
+- **GitHub API**: 5000 requests/hour (authenticated)
+
+**Jean's polling** consumes GitHub quota. Increase `remote_poll_interval` to reduce API usage.
+
+### How long does session history persist?
+
+Forever, unless:
+
+1. You manually delete sessions
+2. Archive retention policy deletes old archives
+3. You reset Jean data
+
+**Configure retention**: Preferences > General > Archive Retention Days
+
+## Updates
+
+### How do I update Jean?
+
+**macOS (Homebrew)**:
+```bash
+brew upgrade jean
+```
+
+**Manual**:
+- Download latest from https://jean.build
+- Replace old version
+
+**Auto-update**: Jean notifies when updates available (if enabled).
+
+### How often is Jean updated?
+
+Follow release schedule on GitHub: https://github.com/coollabsio/jean/releases
+
+**Typical cadence**:
+- Major versions: Every few months
+- Minor versions: Monthly
+- Patches: As needed for bugs
+
+### Will updating break my data?
+
+No, Jean migrates data automatically on update. Sessions, projects, and preferences are preserved.
+
+**Best practice**: Back up data before major version updates:
+```bash
+cp -r ~/Library/Application\ Support/io.coollabs.jean/ ~/jean-backup/
+```
+
+## Getting Help
+
+### Where can I get support?
+
+1. **Documentation**: https://jean.build/docs
+2. **GitHub Issues**: https://github.com/coollabsio/jean/issues
+3. **Discussions**: https://github.com/coollabsio/jean/discussions
+
+### How do I report a bug?
+
+1. Check existing issues: https://github.com/coollabsio/jean/issues
+2. If not found, create new issue
+3. Include:
+   - Jean version (Help > About)
+   - OS version
+   - Steps to reproduce
+   - Expected vs actual behavior
+   - Logs (Help > Open Logs Folder)
+   - Screenshots (if UI bug)
+
+### How do I request a feature?
+
+1. Check existing feature requests
+2. Create new issue with "Feature Request" template
+3. Describe:
+   - Use case
+   - Desired behavior
+   - Why it's important
+   - Alternative approaches
+
+### Can I hire someone to customize Jean for my team?
+
+Jean is open source (MIT). You can:
+
+1. Fork and modify for internal use
+2. Hire developer to add custom features
+3. Contribute improvements back to main project
+
+Contact maintainer for commercial support inquiries.

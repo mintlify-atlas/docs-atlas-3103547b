@@ -1,0 +1,459 @@
+---
+title: 'Configuration Reference'
+description: 'Complete reference for Jean configuration and preferences'
+---
+
+## Overview
+
+Jean stores all configuration in a preferences file. This reference documents every available setting.
+
+## Configuration File Location
+
+**macOS**: `~/Library/Application Support/io.coollabs.jean/preferences.json`
+
+**Linux**: `~/.config/jean/preferences.json`
+
+**Windows**: `%APPDATA%\jean\preferences.json`
+
+## AppPreferences Schema
+
+Complete TypeScript interface from `src/types/preferences.ts`:
+
+```typescript
+export interface AppPreferences {
+  // Appearance
+  theme: string                              // 'system' | 'light' | 'dark'
+  ui_font_size: number                       // 12-24 (default: 16)
+  chat_font_size: number                     // 12-24 (default: 16)
+  ui_font: UIFont                            // 'inter' | 'geist' | 'roboto' | 'lato' | 'system'
+  chat_font: ChatFont                        // 'jetbrains-mono' | 'fira-code' | 'source-code-pro' | 'inter' | 'geist' | 'roboto' | 'lato'
+  syntax_theme_dark: SyntaxTheme             // Dark mode syntax highlighting theme
+  syntax_theme_light: SyntaxTheme            // Light mode syntax highlighting theme
+  zoom_level: number                         // 50-200 (default: 90)
+  canvas_layout: CanvasLayout                // 'grid' | 'list'
+  show_keybinding_hints: boolean             // Show keyboard shortcut hints at bottom (default: true)
+
+  // AI Models & Backends
+  selected_model: ClaudeModel                // 'opus' | 'opus-4.5' | 'sonnet' | 'sonnet-4.5' | 'haiku'
+  thinking_level: ThinkingLevel              // 'off' | 'think' | 'megathink' | 'ultrathink'
+  default_effort_level: EffortLevel          // 'low' | 'medium' | 'high' | 'max' (Opus 4.6 adaptive thinking)
+  default_backend: CliBackend                // 'claude' | 'codex' | 'opencode'
+  selected_codex_model: CodexModel           // 'gpt-5.3-codex' | 'gpt-5.2-codex' | 'gpt-5.1-codex-max' | 'gpt-5.2' | 'gpt-5.1-codex-mini'
+  selected_opencode_model: string            // OpenCode model (provider/model format)
+  default_codex_reasoning_effort: CodexReasoningEffort  // 'low' | 'medium' | 'high' | 'xhigh'
+  codex_multi_agent_enabled: boolean         // Enable Codex multi-agent collaboration (default: false)
+  codex_max_agent_threads: number            // 1-8 (default: 3)
+
+  // Developer Tools
+  terminal: TerminalApp                      // 'terminal' | 'warp' | 'ghostty' | 'iterm2' | 'windows-terminal' | 'powershell' | 'cmd'
+  editor: EditorApp                          // 'zed' | 'vscode' | 'cursor' | 'xcode'
+  open_in: OpenInDefault                     // 'editor' | 'terminal' | 'finder' | 'github'
+  file_edit_mode: FileEditMode               // 'inline' | 'external'
+
+  // Session Management
+  auto_session_naming: boolean               // Auto-generate session names (default: true)
+  session_naming_model: ClaudeModel          // Model for session naming (default: 'haiku')
+  session_recap_enabled: boolean             // Show session recap when returning (default: false)
+  restore_last_session: boolean              // Restore last session when switching projects (default: false)
+  close_original_on_clear_context: boolean   // Close original when using Clear Context (default: true)
+  confirm_session_close: boolean             // Show confirmation before closing (default: true)
+
+  // Worktree & Git
+  auto_branch_naming: boolean                // Auto-generate branch names (default: true)
+  branch_naming_model: ClaudeModel           // Model for branch naming (default: 'haiku')
+  auto_pull_base_branch: boolean             // Auto-pull base before creating worktree (default: true)
+  auto_archive_on_pr_merged: boolean         // Auto-archive when PR merged (default: true)
+  git_poll_interval: number                  // Git status poll interval in seconds, 10-600 (default: 60)
+  remote_poll_interval: number               // Remote API poll interval in seconds, 30-600 (default: 60)
+
+  // Archive & Cleanup
+  archive_retention_days: number             // Days to keep archived items, 0 = never (default: 7)
+  removal_behavior: RemovalBehavior          // 'archive' | 'delete' (default: 'delete')
+
+  // Magic Prompts
+  magic_prompts: MagicPrompts                // Customizable AI prompts (null = use defaults)
+  magic_prompt_models: MagicPromptModels     // Per-prompt model overrides
+  magic_prompt_providers: MagicPromptProviders  // Per-prompt provider overrides
+  magic_prompt_backends: MagicPromptBackends    // Per-prompt backend overrides
+  parallel_execution_prompt_enabled: boolean    // Add parallel execution system prompt (default: false)
+
+  // MCP Servers
+  default_enabled_mcp_servers: string[]      // MCP server names enabled by default (default: [])
+  known_mcp_servers: string[]                // All MCP server names ever seen (default: [])
+
+  // Integrations
+  chrome_enabled: boolean                    // Enable Chrome extension integration (default: true)
+  linear_api_key: string | null              // Global Linear API key (default: null)
+
+  // Remote Access
+  http_server_enabled: boolean               // Enable HTTP server (default: false)
+  http_server_port: number                   // Server port (default: 3456)
+  http_server_token: string | null           // Auth token (auto-generated)
+  http_server_auto_start: boolean            // Auto-start on launch (default: false)
+  http_server_localhost_only: boolean        // Bind to localhost only (default: true)
+  http_server_token_required: boolean        // Require token (default: true)
+
+  // Advanced
+  ai_language: string                        // Preferred language for AI responses (default: '')
+  allow_web_tools_in_plan_mode: boolean      // Allow WebFetch/WebSearch in plan mode (default: true)
+  debug_mode_enabled: boolean                // Show debug panel (default: false)
+  default_provider: string | null            // Default CLI profile name (null = Anthropic)
+  custom_cli_profiles: CustomCliProfile[]    // Custom CLI settings profiles (default: [])
+
+  // Notifications
+  waiting_sound: NotificationSound           // 'none' | 'ding' | 'chime' | 'pop' | 'choochoo' (default: 'none')
+  review_sound: NotificationSound            // Sound when review finishes (default: 'none')
+
+  // Keyboard Shortcuts
+  keybindings: KeybindingsMap                // User-configurable keyboard shortcuts
+
+  // Onboarding
+  has_seen_feature_tour: boolean             // Whether user completed feature tour (default: false)
+  has_seen_jean_config_wizard: boolean       // Whether user completed jean.json wizard (default: false)
+
+  // Plan Mode Overrides
+  build_model: string | null                 // Model for plan approval (build), null = session model
+  yolo_model: string | null                  // Model for yolo approval, null = session model
+  build_backend: string | null               // Backend for build mode, null = session backend
+  yolo_backend: string | null                // Backend for yolo mode, null = session backend
+  build_thinking_level: string | null        // Thinking level for build, null = session level
+  yolo_thinking_level: string | null         // Thinking level for yolo, null = session level
+}
+```
+
+## Type Definitions
+
+### Appearance Types
+
+```typescript
+type UIFont = 'inter' | 'geist' | 'roboto' | 'lato' | 'system'
+type ChatFont = 'jetbrains-mono' | 'fira-code' | 'source-code-pro' | 'inter' | 'geist' | 'roboto' | 'lato'
+
+type SyntaxTheme =
+  | 'vitesse-black' | 'vitesse-dark' | 'vitesse-light'
+  | 'github-dark' | 'github-light' | 'github-dark-dimmed'
+  | 'dracula' | 'dracula-soft'
+  | 'nord'
+  | 'catppuccin-mocha' | 'catppuccin-macchiato' | 'catppuccin-frappe' | 'catppuccin-latte'
+  | 'one-dark-pro' | 'one-light'
+  | 'tokyo-night'
+  | 'rose-pine' | 'rose-pine-moon' | 'rose-pine-dawn'
+
+type CanvasLayout = 'grid' | 'list'
+type FontSize = number  // 12-24
+```
+
+### Model Types
+
+```typescript
+type ClaudeModel = 'opus' | 'opus-4.5' | 'sonnet' | 'sonnet-4.5' | 'haiku'
+
+type CodexModel =
+  | 'gpt-5.3-codex'
+  | 'gpt-5.2-codex'
+  | 'gpt-5.1-codex-max'
+  | 'gpt-5.2'
+  | 'gpt-5.1-codex-mini'
+
+type OpenCodeModel = `opencode/${string}`  // e.g., 'opencode/gpt-5.3-codex'
+
+type ThinkingLevel = 'off' | 'think' | 'megathink' | 'ultrathink'
+type EffortLevel = 'low' | 'medium' | 'high' | 'max'
+type CodexReasoningEffort = 'low' | 'medium' | 'high' | 'xhigh'
+```
+
+### Backend Types
+
+```typescript
+type CliBackend = 'claude' | 'codex' | 'opencode'
+
+interface CustomCliProfile {
+  name: string                    // Display name
+  settings_json: string           // JSON string matching Claude CLI format
+  file_path?: string              // Path to settings file on disk
+  supports_thinking?: boolean     // Whether provider supports thinking/effort
+}
+```
+
+### Tool Types
+
+```typescript
+type TerminalApp =
+  | 'terminal' | 'warp' | 'ghostty' | 'iterm2'           // macOS/Linux
+  | 'windows-terminal' | 'powershell' | 'cmd'           // Windows
+
+type EditorApp = 'zed' | 'vscode' | 'cursor' | 'xcode'
+type OpenInDefault = 'editor' | 'terminal' | 'finder' | 'github'
+type FileEditMode = 'inline' | 'external'
+```
+
+### Magic Prompt Types
+
+```typescript
+interface MagicPrompts {
+  investigate_issue: string | null
+  investigate_pr: string | null
+  pr_content: string | null
+  commit_message: string | null
+  code_review: string | null
+  context_summary: string | null
+  resolve_conflicts: string | null
+  investigate_workflow_run: string | null
+  release_notes: string | null
+  session_naming: string | null
+  parallel_execution: string | null
+  global_system_prompt: string | null
+  session_recap: string | null
+  investigate_security_alert: string | null
+  investigate_advisory: string | null
+  investigate_linear_issue: string | null
+}
+
+interface MagicPromptModels {
+  investigate_issue_model: MagicPromptModel
+  investigate_pr_model: MagicPromptModel
+  // ... (same keys with _model suffix)
+}
+
+interface MagicPromptProviders {
+  investigate_issue_provider: string | null
+  investigate_pr_provider: string | null
+  // ... (same keys with _provider suffix)
+}
+
+interface MagicPromptBackends {
+  investigate_issue_backend: string | null
+  investigate_pr_backend: string | null
+  // ... (same keys with _backend suffix)
+}
+```
+
+### Other Types
+
+```typescript
+type RemovalBehavior = 'archive' | 'delete'
+type NotificationSound = 'none' | 'ding' | 'chime' | 'pop' | 'choochoo'
+
+type KeybindingsMap = Record<string, string>  // action -> shortcut
+```
+
+## Default Values
+
+```typescript
+export const defaultPreferences: AppPreferences = {
+  theme: 'system',
+  selected_model: 'opus',
+  thinking_level: 'ultrathink',
+  default_effort_level: 'high',
+  terminal: 'terminal',
+  editor: 'zed',
+  open_in: 'editor',
+  auto_branch_naming: true,
+  branch_naming_model: 'haiku',
+  auto_session_naming: true,
+  session_naming_model: 'haiku',
+  ui_font_size: 16,
+  chat_font_size: 16,
+  ui_font: 'geist',
+  chat_font: 'geist',
+  git_poll_interval: 60,
+  remote_poll_interval: 60,
+  keybindings: DEFAULT_KEYBINDINGS,
+  archive_retention_days: 7,
+  syntax_theme_dark: 'vitesse-black',
+  syntax_theme_light: 'github-light',
+  session_recap_enabled: false,
+  parallel_execution_prompt_enabled: false,
+  magic_prompts: DEFAULT_MAGIC_PROMPTS,
+  magic_prompt_models: DEFAULT_MAGIC_PROMPT_MODELS,
+  magic_prompt_providers: DEFAULT_MAGIC_PROMPT_PROVIDERS,
+  magic_prompt_backends: DEFAULT_MAGIC_PROMPT_BACKENDS,
+  file_edit_mode: 'external',
+  ai_language: '',
+  allow_web_tools_in_plan_mode: true,
+  waiting_sound: 'none',
+  review_sound: 'none',
+  http_server_enabled: false,
+  http_server_port: 3456,
+  http_server_token: null,
+  http_server_auto_start: false,
+  http_server_localhost_only: true,
+  http_server_token_required: true,
+  removal_behavior: 'delete',
+  auto_pull_base_branch: true,
+  auto_archive_on_pr_merged: true,
+  show_keybinding_hints: true,
+  debug_mode_enabled: false,
+  default_enabled_mcp_servers: [],
+  known_mcp_servers: [],
+  has_seen_feature_tour: false,
+  has_seen_jean_config_wizard: false,
+  chrome_enabled: true,
+  zoom_level: 90,
+  custom_cli_profiles: [],
+  default_provider: null,
+  canvas_layout: 'list',
+  confirm_session_close: true,
+  default_backend: 'claude',
+  selected_codex_model: 'gpt-5.3-codex',
+  selected_opencode_model: 'opencode/gpt-5.3-codex',
+  default_codex_reasoning_effort: 'high',
+  codex_multi_agent_enabled: false,
+  codex_max_agent_threads: 3,
+  restore_last_session: false,
+  close_original_on_clear_context: true,
+  build_model: null,
+  yolo_model: null,
+  build_backend: null,
+  yolo_backend: null,
+  build_thinking_level: null,
+  yolo_thinking_level: null,
+  linear_api_key: null,
+}
+```
+
+## Project Configuration
+
+Per-project settings (stored in project database):
+
+```typescript
+interface Project {
+  id: string                           // UUID v4
+  name: string                         // Display name
+  path: string                         // Absolute path to repo
+  default_branch: string               // Base branch name
+  added_at: number                     // Unix timestamp
+  order: number                        // Display order
+  parent_id?: string                   // Parent folder ID
+  is_folder?: boolean                  // True if folder
+  avatar_path?: string                 // Custom avatar image path
+  enabled_mcp_servers?: string[] | null   // Project MCP servers (null = inherit)
+  known_mcp_servers?: string[]         // All servers ever seen
+  custom_system_prompt?: string        // Project system prompt
+  default_provider?: string | null     // Project default provider
+  default_backend?: string | null      // Project default backend
+  worktrees_dir?: string | null        // Custom worktrees location
+  linear_api_key?: string | null       // Project Linear API key
+  linear_team_id?: string | null       // Linear team ID filter
+}
+```
+
+## jean.json Schema
+
+Per-project scripts configuration (committed to repo):
+
+```json
+{
+  "scripts": {
+    "setup": "bun install && bun run build",
+    "run": "bun run dev",
+    "teardown": "rm -rf node_modules"
+  }
+}
+```
+
+```typescript
+interface JeanConfig {
+  scripts?: {
+    setup?: string       // Run after worktree creation
+    run?: string         // Run when "Execute Run" is triggered
+    teardown?: string    // Run before worktree deletion
+  }
+}
+```
+
+## Environment Variables
+
+Jean respects these environment variables:
+
+```bash
+# Claude CLI
+ANTHROPIC_API_KEY          # API key
+ANTHROPIC_BASE_URL         # Custom API endpoint
+ANTHROPIC_AUTH_TOKEN       # Alternative auth token
+
+# Codex CLI
+OPENAI_API_KEY             # API key
+CODEX_BASE_URL             # Custom API endpoint
+
+# OpenCode
+OPENCODE_API_KEY           # API key
+OPENCODE_BASE_URL          # Custom API endpoint
+
+# Jean
+JEAN_LOG_LEVEL             # 'trace' | 'debug' | 'info' | 'warn' | 'error'
+JEAN_CONFIG_DIR            # Custom config directory
+JEAN_DATA_DIR              # Custom data directory
+```
+
+## Configuration Precedence
+
+Jean uses a layered configuration system:
+
+1. **Session-level** - Chosen in UI (highest priority)
+2. **Project-level** - Project settings
+3. **Global-level** - Preferences
+4. **Default** - Hardcoded defaults (lowest priority)
+
+**Example**: Model selection
+
+```
+Session model > Project default_backend > Global default_backend > 'claude'
+```
+
+## Manual Editing
+
+**Warning**: Editing `preferences.json` directly can break Jean if invalid.
+
+**Best practice**:
+1. Close Jean
+2. Back up `preferences.json`
+3. Edit carefully (validate JSON)
+4. Restart Jean
+5. If Jean fails to start, restore backup
+
+**Validation**:
+```bash
+# Check JSON syntax
+jq . preferences.json
+
+# Pretty-print
+jq . preferences.json > preferences.formatted.json
+```
+
+## Resetting Configuration
+
+**Reset all preferences**:
+1. Close Jean
+2. Delete `preferences.json`
+3. Restart Jean (will recreate with defaults)
+
+**Reset specific preference**:
+1. Open Preferences UI
+2. Find setting
+3. Click "Reset to Default" (if available)
+4. Or manually edit to default value
+
+**Reset keybindings**:
+1. Preferences > Keyboard Shortcuts
+2. Click "Reset All to Defaults"
+
+## Migration
+
+Jean automatically migrates old configs to new formats.
+
+**Example**: Keybinding migration (from `src/services/preferences.ts`):
+
+```typescript
+const MIGRATED_KEYBINDINGS: Partial<Record<keyof KeybindingsMap, string>> = {
+  toggle_left_sidebar: 'mod+1',        // Old default
+  open_provider_dropdown: 'alt+p',     // Old default
+}
+
+// On load, if stored value matches old default, update to new default
+if (stored.toggle_left_sidebar === 'mod+1') {
+  stored.toggle_left_sidebar = 'mod+b'  // New default
+}
+```
+
+Migrations happen silently on app load.

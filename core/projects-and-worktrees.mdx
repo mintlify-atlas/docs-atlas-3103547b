@@ -1,0 +1,308 @@
+---
+title: "Projects and Worktrees"
+description: "Understand how Jean organizes your work with projects, folders, and git worktrees"
+---
+
+## Overview
+
+Jean uses a project-based organization system where each git repository is a **Project**, and you work in isolated **Worktrees** for different branches and tasks.
+
+## Project Structure
+
+### Project Type
+
+Projects in Jean represent git repositories you've added to the app. Each project stores metadata and configuration for managing worktrees.
+
+```typescript
+interface Project {
+  id: string                        // Unique identifier (UUID v4)
+  name: string                      // Display name (from repo directory)
+  path: string                      // Absolute path to original git repo
+  default_branch: string            // Branch to create worktrees from
+  added_at: number                  // Unix timestamp when added
+  order: number                     // Display order in sidebar
+  parent_id?: string                // Parent folder ID (for organization)
+  is_folder?: boolean               // True if this is a folder, not a project
+  avatar_path?: string              // Custom avatar image path
+  enabled_mcp_servers?: string[]    // MCP servers enabled for this project
+  custom_system_prompt?: string     // Custom prompt appended to sessions
+  default_provider?: string | null  // Default AI provider (Claude, OpenRouter, etc.)
+  default_backend?: string | null   // Default CLI backend (claude, codex, opencode)
+  worktrees_dir?: string | null     // Custom base directory for worktrees
+  linear_api_key?: string | null    // Linear API key for this project
+  linear_team_id?: string | null    // Linear team ID filter
+}
+```
+
+<Note>
+The `path` field points to your **original repository**. Worktrees are created in a separate location (by default `~/jean/<project-name>/<worktree-name>`).
+</Note>
+
+### Folders for Organization
+
+You can organize projects into folders. Folders are special Project entries with `is_folder: true` and an empty `path`.
+
+```typescript
+export function isFolder(project: Project): boolean {
+  return project.is_folder === true
+}
+```
+
+<Tip>
+Use folders to group related projects by client, team, or technology stack.
+</Tip>
+
+## Git Worktrees
+
+### What are Git Worktrees?
+
+Git worktrees allow you to have multiple working directories from a single repository. Each worktree has its own branch and working files, but they all share the same git history.
+
+**Benefits:**
+- Work on multiple branches simultaneously
+- Avoid branch switching overhead
+- Isolated environments for different tasks
+- Each worktree can have different dependencies installed
+
+### Worktree Type
+
+```typescript
+interface Worktree {
+  id: string                           // Unique identifier (UUID v4)
+  project_id: string                   // Foreign key to Project
+  name: string                         // Random name (e.g., "fuzzy-tiger")
+  path: string                         // Absolute path to worktree
+  branch: string                       // Git branch name (same as name)
+  created_at: number                   // Unix timestamp
+  session_type?: SessionType           // 'worktree' or 'base'
+  status?: WorktreeStatus              // 'pending' | 'ready' | 'error' | 'deleting'
+  
+  // GitHub Integration
+  pr_number?: number                   // Associated PR number
+  pr_url?: string                      // PR URL
+  issue_number?: number                // Created from issue
+  
+  // Setup Scripts (from jean.json)
+  setup_output?: string                // Output from setup script
+  setup_script?: string                // The script that ran
+  setup_success?: boolean              // Whether setup succeeded
+  
+  // Cached Git Status
+  cached_pr_status?: string            // draft, open, review, merged, closed
+  cached_check_status?: string         // success, failure, pending, error
+  cached_behind_count?: number         // Commits behind base branch
+  cached_ahead_count?: number          // Commits ahead of base branch
+  cached_uncommitted_added?: number    // Uncommitted line additions
+  cached_uncommitted_removed?: number  // Uncommitted line deletions
+  
+  // User Organization
+  label?: LabelData                    // User-assigned label with color
+  order: number                        // Display order within project
+  archived_at?: number                 // Archived timestamp (soft delete)
+  last_opened_at?: number              // Last accessed timestamp
+}
+```
+
+### Session Types
+
+```typescript
+type SessionType = 'worktree' | 'base'
+```
+
+- **`worktree`**: A git worktree for a feature branch (default)
+- **`base`**: A session on the main branch without creating a worktree
+
+<Note>
+Base sessions let you chat with AI on your main branch without creating a worktree. Use them for quick questions or exploring the codebase.
+</Note>
+
+### Worktree Status
+
+```typescript
+type WorktreeStatus = 'pending' | 'ready' | 'error' | 'deleting'
+```
+
+Worktrees are created asynchronously in the background:
+
+1. **`pending`**: Worktree creation in progress (git worktree add, setup script)
+2. **`ready`**: Worktree is ready to use
+3. **`error`**: Creation failed
+4. **`deleting`**: Worktree deletion in progress
+
+## Worktree Creation Workflow
+
+### 1. User initiates creation
+
+```typescript
+// From UI: New Worktree modal, GitHub issue/PR, or branch
+await invoke('create_worktree_from_issue', {
+  projectId,
+  issueNumber,
+  // ... other params
+})
+```
+
+### 2. Backend emits events
+
+```typescript
+// Event: worktree-creating
+interface WorktreeCreatingEvent {
+  id: string
+  project_id: string
+  name: string
+  path: string
+  branch: string
+  pr_number?: number
+  issue_number?: number
+}
+
+// Event: worktree-created (success)
+interface WorktreeCreatedEvent {
+  worktree: Worktree  // Full worktree with status: 'ready'
+}
+
+// Event: worktree-create-error (failure)
+interface WorktreeCreateErrorEvent {
+  id: string
+  project_id: string
+  error: string
+}
+```
+
+### 3. UI updates in real-time
+
+- Shows pending state with spinner
+- Displays error toast on failure
+- Auto-opens worktree on success
+
+## Custom Worktrees Location
+
+By default, Jean creates worktrees in `~/jean/<project-name>/<worktree-name>`. You can customize this per-project:
+
+```typescript
+// Project with custom worktrees directory
+const project: Project = {
+  // ... other fields
+  worktrees_dir: '/Users/me/dev/worktrees',
+}
+
+// Resulting path: /Users/me/dev/worktrees/<project-name>/<worktree-name>
+```
+
+<Tip>
+**Why customize?** Place worktrees on a faster SSD, separate disk, or alongside your repos for easier access.
+</Tip>
+
+## Project Configuration
+
+### MCP Server Management
+
+Control which MCP (Model Context Protocol) servers are enabled for each project:
+
+```typescript
+interface Project {
+  enabled_mcp_servers?: string[] | null  // null = inherit from global
+  known_mcp_servers?: string[]           // All servers ever seen
+}
+```
+
+- **`null` or `undefined`**: Inherit from global settings
+- **Empty array `[]`**: No servers enabled
+- **String array**: Specific servers enabled for this project
+
+### Custom System Prompts
+
+Append custom instructions to every AI session in a project:
+
+```typescript
+interface Project {
+  custom_system_prompt?: string
+}
+```
+
+Use cases:
+- Project-specific coding standards
+- Architecture guidelines
+- Testing requirements
+- Team conventions
+
+### Default AI Settings
+
+Override global AI settings per-project:
+
+```typescript
+interface Project {
+  default_provider?: string | null   // e.g., "OpenRouter", "MiniMax"
+  default_backend?: string | null    // "claude", "codex", "opencode"
+}
+```
+
+## Setup Scripts (jean.json)
+
+Automate worktree initialization with setup scripts defined in `jean.json` at your project root:
+
+```json
+{
+  "setup": "npm install && npm run build"
+}
+```
+
+The setup script runs automatically after creating each worktree. Results are stored:
+
+```typescript
+interface Worktree {
+  setup_output?: string      // Full console output
+  setup_script?: string      // The command that ran
+  setup_success?: boolean    // true/false/undefined
+}
+```
+
+<Accordion title="Example setup script">
+```json
+{
+  "setup": "pnpm install --frozen-lockfile && pnpm build:deps"
+}
+```
+
+This ensures dependencies are installed and built before you start working.
+</Accordion>
+
+## Archiving and Deletion
+
+### Archive a Worktree
+
+Archiving soft-deletes a worktree (can be restored later):
+
+```typescript
+await invoke('archive_worktree', { worktreeId })
+```
+
+- Sets `archived_at` timestamp
+- Hides from main worktree list
+- Viewable in "Archived" modal
+- Deleted after retention period (configurable)
+
+### Permanently Delete
+
+```typescript
+await invoke('delete_worktree_permanent', { worktreeId })
+```
+
+- Removes git worktree from disk
+- Deletes all session data
+- Cannot be undone
+
+<Warning>
+Permanent deletion removes the worktree directory and all associated data. Make sure you've pushed any important changes to remote.
+</Warning>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Sessions" icon="comments" href="/core/sessions">
+    Learn about managing multiple chat sessions per worktree
+  </Card>
+  <Card title="AI Chat" icon="robot" href="/core/ai-chat">
+    Configure AI backends and models for your projects
+  </Card>
+</CardGroup>

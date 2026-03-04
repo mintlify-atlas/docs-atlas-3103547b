@@ -1,0 +1,353 @@
+---
+title: "Execution Modes"
+description: "Understanding plan, build, and yolo modes for controlling AI tool permissions"
+---
+
+## Overview
+
+Jean provides three **execution modes** that control how the AI can interact with your codebase. Each mode offers different levels of automation and safety.
+
+```typescript
+type ExecutionMode = 'plan' | 'build' | 'yolo'
+
+const EXECUTION_MODE_CYCLE: ExecutionMode[] = ['plan', 'build', 'yolo']
+```
+
+Press **Shift+Tab** in chat to cycle through modes.
+
+## Plan Mode
+
+**Read-only exploration and planning.**
+
+```typescript
+// CLI flag: --permission-mode plan
+```
+
+### What Plan Mode Does
+
+- **Read files**: AI can read any file in your worktree
+- **Run read-only commands**: `git status`, `ls`, `cat`, etc.
+- **Propose plans**: AI creates detailed implementation plans
+- **Cannot modify**: No file edits, no destructive commands
+
+### When to Use Plan Mode
+
+<CardGroup cols={2}>
+  <Card title="Exploring unfamiliar code" icon="magnifying-glass">
+    Let AI read and analyze without making changes
+  </Card>
+  <Card title="Debugging" icon="bug">
+    Investigate issues without modifying files
+  </Card>
+  <Card title="Planning complex changes" icon="map">
+    Get a detailed plan before implementation
+  </Card>
+  <Card title="Learning" icon="book">
+    Understand how code works without side effects
+  </Card>
+</CardGroup>
+
+### Plan Mode Workflow
+
+1. Send a message describing what you want to accomplish
+2. AI explores the codebase (reads files, checks git status, etc.)
+3. AI writes a plan to a file (usually `.ai/todo.md` or similar)
+4. Plan appears in chat with an **Approve** button
+5. Click **Approve** to switch to build mode and execute
+6. Or stay in plan mode and refine the plan further
+
+<Tip>
+Plan mode is **ideal for starting any non-trivial task**. Let the AI survey the landscape before making changes.
+</Tip>
+
+### Exit Plan Mode Tool
+
+In Claude CLI, when the AI is ready to implement:
+
+```typescript
+// AI calls: ExitPlanMode tool
+export function isExitPlanMode(toolCall: ToolCall): boolean {
+  return toolCall.name === 'ExitPlanMode'
+}
+```
+
+This pauses execution and shows:
+- **Approve**: Switch to build mode and run the plan
+- **Reject**: Stay in plan mode for more discussion
+
+<Note>
+Codex and OpenCode use a different mechanism: they set `waiting_for_input: true` with `waiting_for_input_type: 'plan'` after writing a plan in plan mode.
+</Note>
+
+## Build Mode
+
+**Auto-approve file edits only.**
+
+```typescript
+// CLI flag: --permission-mode acceptEdits
+```
+
+### What Build Mode Does
+
+- **Auto-approve file edits**: AI can create, edit, and delete files without prompts
+- **Requires approval for commands**: `git commit`, `npm install`, etc. need confirmation
+- **Safer than yolo**: Prevents accidental destructive commands
+- **Faster than plan**: Implements without waiting for approval on every edit
+
+### When to Use Build Mode
+
+<CardGroup cols={2}>
+  <Card title="Implementing features" icon="code">
+    Let AI edit files freely while controlling commands
+  </Card>
+  <Card title="Refactoring" icon="arrows-rotate">
+    Auto-approve file changes, but review git operations
+  </Card>
+  <Card title="Approved plans" icon="check">
+    Execute a plan from plan mode
+  </Card>
+  <Card title="Most day-to-day work" icon="hammer">
+    Balance between speed and safety
+  </Card>
+</CardGroup>
+
+### Build Mode Permissions
+
+**Auto-approved:**
+- `Read` - Read any file
+- `Edit` - Edit files
+- `Write` - Create new files
+- `Bash` (read-only commands) - `ls`, `cat`, `git log`, etc.
+
+**Requires approval:**
+- `Bash` (destructive commands) - `rm`, `git commit`, `npm install`, etc.
+- Web tools - `WebFetch`, `WebSearch` (unless enabled in settings)
+
+<Note>
+You can approve commands once per session. After approval, similar commands are auto-approved for the rest of the session.
+</Note>
+
+### Model Override (Build Mode)
+
+You can configure a different model for build mode:
+
+```typescript
+interface AppPreferences {
+  build_model: string | null         // null = use session model
+  build_backend: string | null       // null = use session backend
+  build_thinking_level: string | null // null = use session thinking
+}
+```
+
+Set in **Settings → AI → Execution Mode Overrides**.
+
+**Use case:** Use a cheaper/faster model for implementation after planning with a powerful model.
+
+## Yolo Mode
+
+**Full automation, no prompts.**
+
+```typescript
+// CLI flag: --permission-mode bypassPermissions
+```
+
+<Warning>
+**Yolo mode bypasses ALL permission checks.** The AI can run any command, edit any file, and make git commits without asking. Use with caution.
+</Warning>
+
+### What Yolo Mode Does
+
+- **Auto-approve everything**: All tools run without prompts
+- **Maximum speed**: No interruptions, no confirmations
+- **Maximum risk**: AI can accidentally delete files, commit unwanted changes, etc.
+- **Best for trusted workflows**: When you're confident in what the AI will do
+
+### When to Use Yolo Mode
+
+<CardGroup cols={2}>
+  <Card title="Repetitive tasks" icon="repeat">
+    Formatting code, fixing lints across many files
+  </Card>
+  <Card title="Routine updates" icon="arrows-rotate">
+    Dependency bumps, config updates
+  </Card>
+  <Card title="Trusted agents" icon="user-check">
+    When you've built a reliable workflow
+  </Card>
+  <Card title="Time-sensitive work" icon="clock">
+    When speed matters more than review
+  </Card>
+</CardGroup>
+
+### Safety Tips for Yolo Mode
+
+1. **Review changes after**: Check git diff before pushing
+2. **Use in isolated worktrees**: Don't yolo on main branch
+3. **Start with plan mode**: Let AI write a plan, then approve with yolo
+4. **Set model overrides**: Use a cheaper model for yolo to reduce cost
+
+### Model Override (Yolo Mode)
+
+```typescript
+interface AppPreferences {
+  yolo_model: string | null         // null = use session model
+  yolo_backend: string | null       // null = use session backend
+  yolo_thinking_level: string | null // null = use session thinking
+}
+```
+
+Set in **Settings → AI → Execution Mode Overrides**.
+
+**Use case:** Use Haiku or a fast model for yolo execution after planning with Opus.
+
+## Execution Mode Indicators
+
+The UI shows the current mode:
+
+- **Plan**: Blue border, read-only badge
+- **Build**: Yellow border, "Auto-edit" badge
+- **Yolo**: Red border, "Full auto" badge
+
+<Tip>
+You can see which mode a message was sent with by checking the message metadata:
+
+```typescript
+interface ChatMessage {
+  execution_mode?: ExecutionMode
+}
+```
+</Tip>
+
+## Mode Cycling (Shift+Tab)
+
+Press **Shift+Tab** to cycle through modes:
+
+```
+Plan → Build → Yolo → Plan → ...
+```
+
+The cycle order is defined in the codebase:
+
+```typescript
+export const EXECUTION_MODE_CYCLE: ExecutionMode[] = ['plan', 'build', 'yolo']
+```
+
+## Execution Mode Persistence
+
+Each session remembers its mode:
+
+```typescript
+interface Session {
+  last_run_execution_mode?: ExecutionMode
+}
+```
+
+When you switch sessions, the mode is restored to what you last used in that session.
+
+## Permission Denials
+
+When a tool requires approval (in plan or build mode):
+
+```typescript
+interface PermissionDenial {
+  tool_name: string            // e.g., "Bash"
+  tool_use_id: string
+  tool_input: unknown          // Command or parameters
+  rpc_id?: number              // Codex JSON-RPC ID
+}
+
+interface Session {
+  pending_permission_denials?: PermissionDenial[]
+}
+```
+
+UI shows a permission dialog with:
+- **Approve**: Run this command
+- **Deny**: Skip this command
+- **Approve All**: Approve this pattern for the session
+
+### Session-Scoped Approved Tools
+
+```typescript
+// Chat store state
+approvedTools: Record<string, string[]>
+
+// When user clicks "Approve All", the tool pattern is added:
+chatStore.addApprovedTool(sessionId, 'Bash:git commit')
+
+// Future commands matching this pattern auto-approve
+```
+
+Approved tools persist for the session duration. Closing the session clears approvals.
+
+## Web Tools in Plan Mode
+
+By default, `WebFetch` and `WebSearch` tools require approval in plan mode. You can auto-approve them:
+
+```typescript
+interface AppPreferences {
+  allow_web_tools_in_plan_mode: boolean  // Default: true
+}
+```
+
+Set in **Settings → Advanced → Allow Web Tools in Plan Mode**.
+
+<Note>
+**Why auto-approve web tools?** They're read-only and often needed for documentation lookups during planning.
+</Note>
+
+## Best Practices
+
+### Recommended Workflow
+
+1. **Start in Plan Mode**
+   - Describe your goal
+   - Let AI explore and plan
+   - Review the proposed plan
+
+2. **Approve to Build Mode**
+   - Click "Approve" on the plan
+   - AI implements automatically
+   - Commands still require approval
+
+3. **Use Yolo for Cleanup**
+   - After main work, switch to yolo
+   - Let AI run linters, formatters, tests
+   - Review changes before pushing
+
+### When to Skip Plan Mode
+
+- **Quick fixes**: Typo corrections, simple bugs
+- **Repetitive tasks**: Formatting, renaming across files
+- **Trusted prompts**: You know exactly what will happen
+
+### When to Use Plan Mode
+
+- **Complex changes**: Multi-file refactors, new features
+- **Unfamiliar code**: Exploring new projects or libraries
+- **High risk**: Changes that could break production
+- **Learning**: Understanding how something works
+
+## Comparison Table
+
+| Feature | Plan Mode | Build Mode | Yolo Mode |
+|---------|-----------|------------|----------|
+| Read files | ✅ Auto | ✅ Auto | ✅ Auto |
+| Edit files | ❌ Denied | ✅ Auto | ✅ Auto |
+| Read-only commands | ✅ Auto | ✅ Auto | ✅ Auto |
+| Destructive commands | ❌ Denied | ⚠️ Requires approval | ✅ Auto |
+| Write plans | ✅ Yes | ✅ Yes | ✅ Yes |
+| Approve plans | ✅ Required | N/A | N/A |
+| Speed | 🐢 Slow | 🏃 Fast | 🚀 Fastest |
+| Safety | 🛡️ Safest | ⚖️ Balanced | ⚠️ Risky |
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="AI Chat" icon="robot" href="/core/ai-chat">
+    Configure AI backends, models, and thinking levels
+  </Card>
+  <Card title="Sessions" icon="comments" href="/core/sessions">
+    Learn about session management and lifecycle
+  </Card>
+</CardGroup>

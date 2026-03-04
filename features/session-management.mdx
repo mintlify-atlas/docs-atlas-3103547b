@@ -1,0 +1,460 @@
+---
+title: Session Management
+description: Creating, managing, and archiving chat sessions in Jean
+---
+
+## Overview
+
+Jean's session management system allows you to run multiple independent AI chat sessions within each worktree. Sessions maintain their own context, history, and state throughout their lifecycle.
+
+## Key Capabilities
+
+### Session Types
+
+**Chat Sessions** - Individual AI conversations:
+```typescript
+interface Session {
+  id: string                  // UUID v4 identifier
+  worktree_id: string         // Parent worktree
+  name: string                // Display name
+  created_at: number          // Unix timestamp
+  updated_at: number          // Last activity
+  messages: ChatMessage[]     // Conversation history
+  model: ClaudeModel          // opus | sonnet | haiku | etc.
+  thinking_level: ThinkingLevel  // off | think | megathink | ultrathink
+  effort_level?: EffortLevel  // low | medium | high | max (Opus 4.6 only)
+  backend: CliBackend         // claude | codex | opencode
+  provider?: string           // Custom provider profile
+  archived_at?: number        // Archived timestamp
+}
+```
+
+**Base Session** - Main branch session:
+- Created automatically with base worktree
+- Represents work on the default branch
+- Cannot be deleted (only archived)
+- Persists across app restarts
+
+### Canvas Views
+
+Two different canvas layouts for viewing sessions:
+
+**Worktree Canvas** - Sessions within a single worktree:
+- Grid or list layout (configurable)
+- Shows all sessions for active worktree
+- Quick keyboard navigation (arrow keys)
+- Visual status indicators
+
+**Project Canvas** - Sessions across all worktrees:
+- Grouped by worktree with section headers
+- Overview of entire project
+- Jump between worktrees quickly
+- Same grid/list layouts
+
+**Layout Options:**
+```typescript
+type CanvasLayout = 'grid' | 'list'
+
+// Grid: Card-based layout with previews
+// List: Compact rows for many sessions
+```
+
+**Keyboard Navigation** (from `src/components/chat/hooks/useCanvasKeyboardNav.ts`):
+- Arrow keys: Navigate between sessions
+- Enter: Open selected session
+- Cmd/Ctrl + shortcuts: Open plan, recap, approve plan
+
+### Session Lifecycle
+
+**Creation:**
+1. User creates new session
+2. Session initialized with default model/settings
+3. Inherits project-specific configuration
+4. Empty message history
+5. Automatically named on first message (if enabled)
+
+**Active Usage:**
+- Messages appended to history
+- State persisted to disk continuously
+- UI state tracked (answered questions, fixed findings)
+- MCP servers loaded on demand
+- Terminals attached to session
+
+**Archiving:**
+- Soft delete - can be restored
+- Moves to archive view
+- Freed from memory but data preserved
+- Subject to retention policy
+
+**Permanent Deletion:**
+- After retention period expires
+- Manual deletion from archive
+- All messages and state lost
+- Cannot be recovered
+
+### Session Modes
+
+Jean supports three execution modes:
+
+**Plan Mode** - Propose before executing:
+```typescript
+// User message includes plan mode marker
+const message = "Fix the authentication bug [plan]"
+
+// AI responds with plan
+// User reviews and approves
+// AI executes approved plan
+```
+
+**Build Mode** - Execute after approval:
+- Similar to plan mode
+- Different model/settings can be configured
+- Approval required before changes
+
+**Yolo Mode** - Execute immediately:
+- No approval needed
+- Fastest iteration
+- Use for trusted operations
+
+**Mode Selection:**
+- Append `[plan]`, `[build]`, or `[yolo]` to message
+- Or use toolbar buttons
+- Per-message choice
+
+### Auto-Naming
+
+Sessions are automatically named based on first message:
+
+**Configuration:**
+```typescript
+interface AppPreferences {
+  auto_session_naming: boolean           // Enable/disable
+  session_naming_model: ClaudeModel      // Model to use
+  magic_prompts: {
+    session_naming: string | null        // Custom prompt
+  }
+}
+```
+
+**Default naming prompt:**
+```typescript
+const DEFAULT_SESSION_NAMING_PROMPT = `<task>Generate a short, human-friendly name for this chat session based on the user's request.</task>
+
+<rules>
+- Maximum 4-5 words total
+- Use sentence case (only capitalize first word)
+- Be descriptive but concise
+- Focus on the main topic or goal
+- No special characters or punctuation
+- No generic names like "Chat session" or "New task"
+- Do NOT use commit-style prefixes like "Add", "Fix", "Update", "Refactor"
+</rules>
+
+<user_request>
+{message}
+</user_request>
+
+<output_format>
+Respond with ONLY the raw JSON object, no markdown, no code fences:
+{"session_name": "Your session name here"}
+</output_format>`
+```
+
+**Examples:**
+- "Implement user authentication" → "User authentication system"
+- "Fix bug in payment processing" → "Payment processing bug"
+- "Refactor database queries" → "Database query optimization"
+
+### Session Recap (Digest)
+
+Optional feature that summarizes sessions when you return to them:
+
+**Configuration:**
+```typescript
+interface AppPreferences {
+  session_recap_enabled: boolean  // Default: false (experimental)
+}
+```
+
+**When shown:**
+- Returning to unfocused session
+- After significant time gap
+- Helps regain context quickly
+
+**Digest structure:**
+```typescript
+interface SessionDigest {
+  chat_summary: string      // One sentence, max 100 chars
+  last_action: string       // Last completed task, max 200 chars
+}
+```
+
+**Implementation:**
+Uses dedicated model and prompt (configurable in magic prompts).
+
+### State Persistence
+
+**Session data storage:**
+- Messages: `<worktree_path>/.jean/sessions/<session_id>/messages.json`
+- State: `<worktree_path>/.jean/sessions/<session_id>/state.json`
+- Attachments: `<worktree_path>/.jean/sessions/<session_id>/attachments/`
+
+**UI state persistence** (from `src/hooks/useUIStatePersistence.ts`):
+```typescript
+interface UIState {
+  answered_questions: Record<string, Set<string>>  // sessionId → question IDs
+  fixed_review_findings: Record<string, Set<string>>  // sessionId → finding IDs
+  loaded_issue_numbers: Record<string, number[]>    // sessionId → issue numbers
+  loaded_pr_numbers: Record<string, number[]>       // sessionId → PR numbers
+  // ... more UI-specific state
+}
+```
+
+**Persistence pattern:**
+1. Zustand store holds UI state
+2. Hook subscribes to changes
+3. Debounced save to Tauri backend
+4. Restored on session load
+
+## How to Use
+
+### Creating Sessions
+
+**Within a worktree:**
+1. Click "+" in chat tabs bar
+2. New session created with default settings
+3. Start chatting immediately
+
+**From canvas view:**
+1. Press Cmd/Ctrl + K to open canvas
+2. Click "New Session" button
+3. Session created in current worktree
+
+### Switching Between Sessions
+
+**Tab navigation:**
+- Click session tabs at top of chat
+- Cmd/Ctrl + 1-9 for quick switching
+- Cmd/Ctrl + [ and ] for prev/next
+
+**Canvas navigation:**
+- Cmd/Ctrl + K to open canvas
+- Arrow keys to move selection
+- Enter to open session
+- Escape to close canvas
+
+### Session Settings
+
+**Model Selection:**
+- Toolbar dropdown
+- Choose from available models
+- Settings persist for session
+
+**Thinking Level:**
+- Off: No extended thinking
+- Think: 4K thinking tokens
+- Megathink: 10K thinking tokens
+- Ultrathink: 32K thinking tokens
+
+**Effort Level (Opus 4.6 only):**
+- Low: Minimal reasoning
+- Medium: Moderate depth
+- High: Deep analysis
+- Max: Unlimited reasoning
+
+**Backend & Provider:**
+- Change CLI backend (Claude/Codex/OpenCode)
+- Select provider profile for API routing
+- Per-session configuration
+
+### Managing Session History
+
+**View messages:**
+- Scroll through chat history
+- Syntax-highlighted code blocks
+- Expandable thinking sections
+- File previews and diffs
+
+**Clear context:**
+- Toolbar → More → Clear Context
+- Creates new session
+- Optionally closes original
+- Useful for starting fresh
+
+**Save context:**
+- Toolbar → Save Context
+- AI summarizes conversation
+- Saved as markdown file
+- Can load in future sessions
+
+### Archiving Sessions
+
+**Manual archive:**
+1. Right-click session tab → Archive
+2. Or use canvas context menu
+3. Confirmation dialog (if enabled)
+4. Moves to archive
+
+**View archives:**
+1. Open Archive modal (Cmd/Ctrl + Shift + A)
+2. Sessions grouped by worktree
+3. Filter and search
+4. Restore or permanently delete
+
+**Restore archived session:**
+1. Find in archive modal
+2. Click "Restore"
+3. Returns to active sessions
+4. All state preserved
+
+### Canvas Workflow
+
+**Switching layouts:**
+- Settings → Interface → Canvas Layout
+- Grid: Visual cards with previews
+- List: Compact rows for many sessions
+
+**Grid view features:**
+- Session name and timestamp
+- Last message preview
+- Status badges (waiting, thinking, error)
+- Model and mode indicators
+
+**List view features:**
+- Denser information display
+- More sessions visible at once
+- Quick scanning
+- Same functionality as grid
+
+## Configuration Options
+
+### Settings → Sessions
+
+**Auto-Naming:**
+```typescript
+auto_session_naming: boolean           // Enable automatic naming
+session_naming_model: ClaudeModel      // Model for name generation
+```
+
+**Session Recap:**
+```typescript
+session_recap_enabled: boolean         // Show digest on return
+```
+
+**Confirmation:**
+```typescript
+confirm_session_close: boolean         // Warn before closing
+```
+
+**Archive Retention:**
+```typescript
+archive_retention_days: number         // 0 = never delete
+```
+
+### Settings → Interface
+
+**Canvas Layout:**
+```typescript
+canvas_layout: 'grid' | 'list'        // View mode
+```
+
+**Keyboard Hints:**
+```typescript
+show_keybinding_hints: boolean         // Show shortcuts at bottom
+```
+
+## Best Practices
+
+### Session Organization
+
+**One session per task:**
+- Keep sessions focused
+- Create new session for different work
+- Avoid mixing unrelated topics
+
+**Example structure:**
+```
+Worktree: fix-auth-bug
+  ├─ fix-auth-bug (base session) - Main implementation
+  ├─ testing-strategy - Test planning  
+  └─ code-review - Pre-PR review
+```
+
+### Context Management
+
+**When to clear context:**
+- Hit token limits
+- Change direction significantly
+- Start new feature in same worktree
+- Performance degrades
+
+**When to save context:**
+- Before major refactoring
+- End of work session
+- Before asking team for help
+- Documenting decisions
+
+### Canvas Usage
+
+**Grid view for:**
+- Visual thinkers
+- Fewer sessions (< 20)
+- Quick status overview
+- Session preview helpful
+
+**List view for:**
+- Many sessions (20+)
+- Fast scanning
+- Keyboard-heavy workflow
+- Information density priority
+
+### Archive Management
+
+**Archive vs. Delete:**
+- Archive: Temporary pause, might return
+- Delete: Definitely done, save space
+
+**Retention strategies:**
+- **7 days**: Active projects, fast iteration
+- **30 days**: Reference needed for similar work
+- **Never**: Audit trail required
+
+### Model Selection
+
+**By task type:**
+- **Opus**: Complex problems, architecture decisions
+- **Sonnet**: General development, code review
+- **Haiku**: Quick questions, simple refactors
+
+**Thinking levels:**
+- **Off**: Fast, deterministic tasks
+- **Think**: Standard reasoning
+- **Megathink**: Complex logic, edge cases
+- **Ultrathink**: Novel problems, research
+
+### Performance Optimization
+
+**Keep sessions lean:**
+- Archive finished work
+- Don't load unnecessary context
+- Clear old thinking traces
+- Use file mentions instead of pasting code
+
+**Session limits:**
+- Active sessions per worktree: 10-15
+- Messages per session: < 100
+- Token count: < 100K
+
+### Recovery
+
+**If session crashes:**
+- Jean auto-saves continuously
+- Restart app to recover
+- Check logs in debug panel
+- Report crash with logs
+
+**If messages lost:**
+- Check `.jean/sessions/` directory
+- `messages.json` files are readable
+- Can manually reconstruct
+- Future: built-in export

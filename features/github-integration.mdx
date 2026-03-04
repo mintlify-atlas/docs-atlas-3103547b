@@ -1,0 +1,581 @@
+---
+title: GitHub Integration
+description: Issue and PR investigation, checkout PRs, workflow analysis, and auto-archiving
+---
+
+## Overview
+
+Jean integrates deeply with GitHub through the GitHub CLI (`gh`), enabling seamless issue investigation, pull request workflows, CI monitoring, and automatic worktree management.
+
+## Key Capabilities
+
+### Issue Investigation
+
+**Browse and search issues:**
+```typescript
+// From src-tauri/src/projects/github_issues.rs
+interface GitHubIssue {
+  number: u32
+  title: string
+  body: Option<string>
+  state: string             // "open", "closed"
+  labels: Vec<GitHubLabel>
+  created_at: string
+  author: GitHubAuthor
+}
+
+interface GitHubIssueListResult {
+  issues: Vec<GitHubIssue>
+  total_count: u32          // For pagination
+}
+```
+
+**Investigation workflow:**
+1. Click GitHub icon in project sidebar
+2. Browse open issues (up to 100)
+3. Filter by state (open, closed, all)
+4. Click "Investigate" on any issue
+5. Jean creates worktree with issue context
+6. AI analyzes issue and proposes solution
+
+**Context loading:**
+```typescript
+interface IssueContext {
+  number: u32
+  title: string
+  body: Option<string>
+  comments: Vec<GitHubComment>
+}
+```
+
+**Issue context file structure:**
+```
+<worktree>/.jean/contexts/issue-<number>.md
+```
+
+**Markdown format:**
+```markdown
+# Issue #123: Bug title
+
+**Author:** @username
+**Created:** 2024-01-15
+**State:** open
+**Labels:** bug, priority:high
+
+## Description
+
+[Issue body content]
+
+## Comments
+
+### @commenter1 (2024-01-16)
+[Comment body]
+
+### @commenter2 (2024-01-17)
+[Comment body]
+```
+
+### Pull Request Workflows
+
+**PR investigation:**
+```typescript
+interface GitHubPRDetail {
+  number: u32
+  title: string
+  body: Option<string>
+  state: string
+  headRefName: string       // Source branch
+  baseRefName: string       // Target branch
+  author: GitHubAuthor
+  comments: Vec<GitHubComment>
+  reviews: Vec<GitHubReview>
+  diff: Option<string>      // Full PR diff
+}
+```
+
+**Checkout PR workflow:**
+1. Find PR in GitHub panel
+2. Click "Checkout PR"
+3. Jean creates worktree on PR branch
+4. Loads PR context (description, reviews, comments)
+5. AI analyzes changes and review feedback
+6. Proposes addressing reviewer comments
+
+**PR context file structure:**
+```
+<worktree>/.jean/contexts/pr-<number>.md
+```
+
+**Security review:**
+PR investigation includes automatic security analysis:
+- Malicious or obfuscated code
+- Suspicious dependency changes
+- Hardcoded secrets
+- Backdoors or unauthorized access
+- Injection vulnerabilities
+- Weakened auth/permissions
+
+### PR Creation
+
+**AI-generated PR content:**
+```typescript
+// Toolbar → Open PR button
+interface CreatePrResponse {
+  pr_number: number
+  pr_url: string
+  title: string             // AI-generated
+  existing: boolean         // Already existed?
+}
+```
+
+**Creation flow:**
+1. Click "Open PR" in chat toolbar
+2. Jean collects:
+   - Current branch and target branch
+   - Commit history since divergence
+   - Full diff
+3. AI generates title and body
+4. Creates PR via `gh pr create`
+5. Links PR to worktree
+6. Opens PR URL in browser
+
+**Background operation:**
+- Toast notification for progress
+- Success toast with "Open" action
+- Worktree updated with PR metadata
+
+### PR Status Tracking
+
+**Cached PR information:**
+```typescript
+interface Worktree {
+  pr_number?: number
+  pr_url?: string
+  cached_pr_status?: string       // draft, open, review, merged, closed
+  cached_check_status?: string    // success, failure, pending, error
+  cached_status_at?: number       // Last check timestamp
+}
+```
+
+**Status badges:**
+Displayed in worktree list and canvas views:
+- PR status (draft, open, merged, etc.)
+- CI check status (passing, failing, pending)
+- Behind/ahead commit counts
+- Uncommitted changes count
+
+**Polling:**
+```typescript
+// Settings → Worktrees
+remote_poll_interval: number  // Default: 60 seconds (1 minute)
+                              // Range: 30-600 seconds
+```
+
+**Status updates:**
+- Polls GitHub via `gh pr view`
+- Polls CI via `gh pr checks`
+- Caches results to reduce API calls
+- Updates badges in real-time
+
+### Auto-Archive on PR Merge
+
+**Configuration:**
+```typescript
+interface AppPreferences {
+  auto_archive_on_pr_merged: boolean  // Default: true
+}
+```
+
+**Behavior:**
+1. Polling detects PR status changed to "merged"
+2. Jean archives associated worktree
+3. Toast notification confirms archiving
+4. Worktree moves to archive view
+5. Subject to retention policy
+
+**Use cases:**
+- Automatic cleanup after merging
+- Keeps active worktrees focused on open work
+- Reduces manual cleanup effort
+
+### Workflow Investigation
+
+**Failed CI workflows:**
+```typescript
+interface WorkflowRun {
+  id: number
+  name: string
+  head_branch: string
+  display_title: string
+  status: string
+  conclusion: string
+  html_url: string
+}
+```
+
+**Investigation workflow:**
+1. Worktree shows failed check badge
+2. Click "Investigate" on workflow
+3. Jean creates session with workflow context
+4. AI fetches logs: `gh run view {runId} --log-failed`
+5. Analyzes error output
+6. Explores relevant code
+7. Determines issue type:
+   - Code bug
+   - CI configuration issue
+   - Flaky test
+8. Proposes fix
+
+**Workflow context:**
+```markdown
+# Failed Workflow: CI Tests
+
+**Branch:** feature-branch
+**Commit:** abc123 - Add new feature
+**Run URL:** https://github.com/.../runs/123456
+**Status:** failure
+
+## Logs
+
+[Error output from failed jobs]
+```
+
+### Git Status Integration
+
+**Cached git information:**
+```typescript
+interface Worktree {
+  // Uncommitted changes
+  cached_uncommitted_added?: number
+  cached_uncommitted_removed?: number
+  
+  // Branch diff vs base
+  cached_branch_diff_added?: number
+  cached_branch_diff_removed?: number
+  
+  // Sync status
+  cached_behind_count?: number      // Commits behind base
+  cached_ahead_count?: number       // Commits ahead of base
+  cached_unpushed_count?: number    // Commits not pushed
+  
+  // Base branch sync
+  cached_base_branch_ahead_count?: number
+  cached_base_branch_behind_count?: number
+  cached_worktree_ahead_count?: number
+}
+```
+
+**Polling:**
+```typescript
+git_poll_interval: number  // Default: 60 seconds
+                          // Range: 10-600 seconds
+```
+
+**Visual indicators:**
+- Uncommitted changes badge
+- Behind/ahead counts
+- Push/pull reminders
+- Conflict warnings
+
+## How to Use
+
+### Setting Up GitHub CLI
+
+**Prerequisites:**
+1. Install GitHub CLI: `brew install gh` (macOS)
+2. Authenticate: `gh auth login`
+3. Verify: `gh auth status`
+
+**Jean detection:**
+- Automatically locates `gh` binary
+- Checks common installation paths
+- Falls back to system PATH
+
+### Browsing Issues
+
+**Open GitHub panel:**
+1. Click GitHub icon in project sidebar
+2. Or press configured keyboard shortcut
+
+**Filter issues:**
+- State dropdown: Open, Closed, All
+- Search bar: Filter by text
+- Label filters: Click labels to filter
+
+**Pagination:**
+- Shows up to 100 issues
+- Total count displayed
+- Scroll to load more (future)
+
+### Investigating Issues
+
+**Quick investigation:**
+1. Click "Investigate" button on issue
+2. Jean creates worktree automatically
+3. Issue context loads in chat
+4. AI starts analysis immediately
+5. Review AI's findings and proposal
+
+**Manual workflow:**
+1. Create worktree manually
+2. Use magic command to load issue
+3. Chat with AI about implementation
+4. Reference issue context as needed
+
+### Working with Pull Requests
+
+**Checkout existing PR:**
+1. Browse PRs in GitHub panel
+2. Click "Checkout PR"
+3. Worktree created on PR branch
+4. PR context loaded
+5. AI reviews changes and feedback
+
+**Create new PR:**
+1. Complete work in worktree
+2. Commit changes
+3. Click "Open PR" in toolbar
+4. Review AI-generated title/body
+5. Confirm to create
+6. PR opens in browser
+
+**Update PR:**
+1. Make additional changes
+2. Commit normally
+3. Push to update PR automatically
+4. Jean tracks PR status
+
+### Monitoring CI/CD
+
+**View workflow status:**
+- Check badge in worktree list
+- Green: All checks passing
+- Red: Some checks failed
+- Yellow: Checks pending
+- Gray: No checks configured
+
+**Investigate failures:**
+1. Click failed check badge
+2. Select workflow to investigate
+3. AI analyzes logs and proposes fix
+4. Implement fix
+5. Push and monitor new run
+
+### Managing PR Lifecycle
+
+**Track progress:**
+- Draft → Open → Review → Merged
+- Status badge updates automatically
+- CI status shown alongside
+
+**After merge:**
+- Worktree auto-archives (if enabled)
+- Manual cleanup if disabled
+- Archive retention policy applies
+
+## Configuration Options
+
+### Polling Intervals
+
+**Git polling:**
+```typescript
+git_poll_interval: number
+// Default: 60 seconds
+// Range: 10-600 seconds
+// Affects: Local git status checks
+```
+
+**Remote polling:**
+```typescript
+remote_poll_interval: number
+// Default: 60 seconds  
+// Range: 30-600 seconds
+// Affects: GitHub API calls (PR status, checks)
+```
+
+**Recommendations:**
+- Active development: 30-60 seconds
+- Background projects: 300-600 seconds
+- Rate limit concerns: 300+ seconds
+
+### Auto-Archive Settings
+
+**Enable/disable:**
+```typescript
+auto_archive_on_pr_merged: boolean
+// Default: true
+// Location: Settings → Worktrees
+```
+
+**Retention:**
+```typescript
+archive_retention_days: number
+// Default: 7 days
+// Options: 0 (never), 7, 14, 30, 60, 90
+```
+
+### GitHub Authentication
+
+**Location:** Managed by GitHub CLI
+
+**Commands:**
+```bash
+# Login
+gh auth login
+
+# Check status
+gh auth status
+
+# Switch accounts
+gh auth switch
+
+# Refresh token
+gh auth refresh
+```
+
+## Best Practices
+
+### Issue Investigation
+
+**When to investigate:**
+- Complex bugs requiring codebase exploration
+- Feature requests needing architecture decisions
+- Regressions requiring git history analysis
+- Issues with unclear reproduction steps
+
+**When to skip:**
+- Simple, well-understood fixes
+- Documentation updates
+- Typo fixes
+- Duplicate issues
+
+### PR Workflows
+
+**Before creating PR:**
+1. Commit all changes
+2. Run tests locally
+3. Review diff yourself
+4. Let AI generate PR content
+5. Edit if needed
+
+**PR checklist:**
+- [ ] All commits pushed
+- [ ] Tests passing
+- [ ] AI code review clean
+- [ ] PR description accurate
+- [ ] Linked to issue (if applicable)
+
+### CI/CD Monitoring
+
+**Set appropriate poll intervals:**
+```
+Active development: 30-60s
+PR in review: 120-300s
+Merged work: 600s or disable
+```
+
+**Handle flaky tests:**
+- Investigate using workflow investigation
+- Fix root cause, don't just retry
+- Document flakiness patterns
+- Use AI to suggest stability improvements
+
+### Performance Optimization
+
+**Reduce API calls:**
+- Increase poll intervals
+- Disable auto-archive if not needed
+- Archive finished work promptly
+- Close unused worktrees
+
+**Rate limit management:**
+- GitHub API: 5,000 requests/hour (authenticated)
+- Jean caches aggressively
+- Increase poll intervals if hitting limits
+- Monitor `gh api rate_limit`
+
+### Security
+
+**PR security reviews:**
+- Always review AI's security findings
+- Don't blindly trust AI approval
+- Check dependencies manually
+- Verify credential handling
+- Review permission changes
+
+**Token security:**
+- GitHub CLI handles token storage
+- Tokens stored in OS keychain
+- Never commit tokens to repository
+- Rotate tokens regularly
+
+### Workflow Organization
+
+**Issue-driven development:**
+```
+1. Browse issues → Find work
+2. Investigate issue → Understand problem
+3. Implement fix → Write code
+4. Commit → AI-generated messages
+5. Review → AI code review
+6. Open PR → AI-generated content
+7. Address feedback → Update PR
+8. Merge → Auto-archive
+```
+
+**PR-first workflow:**
+```
+1. Checkout PR → Review someone's code
+2. Investigate → AI analyzes changes
+3. Comment → Provide feedback
+4. Test locally → Verify functionality
+5. Approve or request changes
+```
+
+### Team Collaboration
+
+**Shared conventions:**
+- Customize magic prompts for team style
+- Configure commit message format
+- Set PR description template
+- Document review criteria
+
+**Code review standards:**
+- Use AI review as first pass
+- Human review for architecture
+- Security review for sensitive changes
+- Performance review for critical paths
+
+### Troubleshooting
+
+**GitHub CLI not working:**
+```bash
+# Check installation
+which gh
+gh --version
+
+# Re-authenticate
+gh auth logout
+gh auth login
+
+# Test API access
+gh api user
+```
+
+**Missing issues/PRs:**
+- Check repository visibility
+- Verify authentication
+- Confirm permissions
+- Check filters/search
+
+**Polling not updating:**
+- Check poll interval settings
+- Verify internet connection
+- Check GitHub status
+- Review app logs
+
+**PR creation failing:**
+- Ensure branch pushed
+- Check remote exists
+- Verify gh CLI works: `gh pr create`
+- Check for existing PR

@@ -1,0 +1,438 @@
+---
+title: 'Multi-Backend Setup'
+description: 'Configure and use Claude CLI, Codex CLI, and OpenCode in Jean'
+---
+
+## Overview
+
+Jean supports three AI backends:
+
+- **Claude CLI** - Official Anthropic Claude desktop CLI
+- **Codex CLI** - OpenAI's Codex CLI for GPT models  
+- **OpenCode** - Open-source AI coding assistant
+
+You can install all three and switch between them per-project or per-session.
+
+## Backend Comparison
+
+| Feature | Claude CLI | Codex CLI | OpenCode |
+|---------|-----------|-----------|----------|
+| **Provider** | Anthropic | OpenAI | Open Source |
+| **Models** | Opus, Sonnet, Haiku | GPT-5.x series | Multiple providers |
+| **Thinking Levels** | Yes (off/think/mega/ultra) | No | No |
+| **Reasoning Effort** | Yes (Opus 4.6 adaptive) | Yes (low/medium/high/xhigh) | No |
+| **MCP Support** | Yes (.claude.json) | Yes (config.toml) | Yes (opencode.json) |
+| **Installation** | via Jean UI | via Jean UI | via Jean UI |
+| **Authentication** | `claude auth` | `codex auth` | `opencode auth` |
+
+## Installing Backends
+
+### Via Jean UI
+
+1. Open **Preferences** (`Cmd/Ctrl + ,`)
+2. Navigate to **Backends** tab
+3. For each backend:
+   - View installation status
+   - Click **Install** if not installed
+   - Click **Authenticate** after install
+   - Verify status shows "Authenticated"
+
+### Manual Installation
+
+#### Claude CLI
+
+```bash
+# macOS
+brew install anthropics/claude/claude-cli
+
+# Authenticate
+claude auth
+```
+
+#### Codex CLI
+
+```bash
+# Install (varies by platform)
+# See: https://openai.com/codex
+
+# Authenticate
+codex auth
+```
+
+#### OpenCode
+
+```bash
+# Install via npm
+npm install -g opencode
+
+# Or download binary from releases
+# See: https://github.com/opencode/opencode
+
+# Authenticate (varies by provider)
+opencode auth
+```
+
+## Configuration Files
+
+### Claude CLI
+
+**Global settings**: `~/.claude/settings.json`
+
+```json
+{
+  "env": {
+    "ANTHROPIC_API_KEY": "sk-ant-..."
+  }
+}
+```
+
+**Project settings**: `.claude/settings.json` in project root
+
+**MCP servers**: `.claude.json` (global) or `.mcp.json` (project)
+
+### Codex CLI
+
+**Global config**: `~/.codex/config.toml`
+
+```toml
+[auth]
+api_key = "sk-..."
+
+[[mcp_servers]]
+name = "filesystem"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem", "/path"]
+```
+
+**Project config**: `.codex/config.toml` in project root
+
+### OpenCode
+
+**Global config**: `~/.config/opencode/opencode.json`
+
+```json
+{
+  "apiKey": "...",
+  "mcpServers": {...}
+}
+```
+
+**Project config**: `opencode.json` in project root
+
+## Default Backend
+
+Set the default backend for new sessions:
+
+**Global default**:
+1. Preferences > General
+2. **Default Backend** dropdown
+3. Select: Claude, Codex, or OpenCode
+
+**Per-project override**:
+1. Right-click project > **Project Settings**
+2. Navigate to **General** tab
+3. **Default Backend** dropdown
+4. Select backend or "Use Global Default"
+
+## Switching Backends
+
+### In Active Session
+
+You **cannot** change backend mid-session. Backend is locked when session starts.
+
+To switch:
+1. Create new session (`Cmd/Ctrl + T`)
+2. Select different backend from toolbar
+3. Start chatting
+
+### For Existing Session
+
+Backend is stored with session metadata and persists across restarts.
+
+## Backend-Specific Features
+
+### Claude CLI
+
+**Thinking Levels**:
+- `off` - No extended thinking
+- `think` - 4K thinking tokens
+- `megathink` - 10K thinking tokens  
+- `ultrathink` - 32K thinking tokens
+
+**Adaptive Effort** (Opus 4.6):
+- `low` - Minimal reasoning
+- `medium` - Moderate reasoning
+- `high` - Deep reasoning
+- `max` - No limits
+
+**CLI flags**:
+```bash
+claude --model opus --thinking ultrathink --effort high
+```
+
+### Codex CLI
+
+**Models**:
+- `gpt-5.3-codex` - Latest flagship
+- `gpt-5.2-codex` - Previous flagship
+- `gpt-5.1-codex-max` - Maximum capability
+- `gpt-5.2` - General purpose
+- `gpt-5.1-codex-mini` - Fast, lightweight
+
+**Reasoning Effort**:
+```bash
+codex --model gpt-5.3-codex --reasoning-effort high
+```
+
+**Multi-Agent Mode** (experimental):
+- Enable: Preferences > Codex > Multi-Agent Enabled
+- Max threads: 1-8 concurrent agents
+
+### OpenCode
+
+**Provider Support**:
+- Anthropic
+- OpenAI
+- OpenRouter
+- Local models (Ollama, LM Studio)
+- Custom API endpoints
+
+**Model Format**: `opencode/[provider]/[model]`
+
+Example:
+```
+opencode/anthropic/claude-opus-4
+opencode/openai/gpt-5
+opencode/openrouter/anthropic/claude-opus
+```
+
+## Custom CLI Profiles
+
+For Claude CLI, you can configure custom provider profiles:
+
+### Predefined Profiles
+
+**OpenRouter**:
+```json
+{
+  "name": "OpenRouter",
+  "settings_json": {
+    "env": {
+      "ANTHROPIC_BASE_URL": "https://openrouter.ai/api",
+      "ANTHROPIC_AUTH_TOKEN": "<your_api_key>"
+    }
+  }
+}
+```
+
+**MiniMax**:
+```json
+{
+  "name": "MiniMax",
+  "supports_thinking": false,
+  "settings_json": {
+    "env": {
+      "ANTHROPIC_BASE_URL": "https://api.minimax.io/anthropic",
+      "ANTHROPIC_AUTH_TOKEN": "<your_api_key>",
+      "ANTHROPIC_MODEL": "MiniMax-M2.5"
+    }
+  }
+}
+```
+
+**Z.ai**:
+```json
+{
+  "name": "Z.ai",
+  "supports_thinking": false,
+  "settings_json": {
+    "env": {
+      "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
+      "ANTHROPIC_AUTH_TOKEN": "<your_api_key>",
+      "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-4.7"
+    }
+  }
+}
+```
+
+**Moonshot**:
+```json
+{
+  "name": "Moonshot",
+  "supports_thinking": false,
+  "settings_json": {
+    "env": {
+      "ANTHROPIC_BASE_URL": "https://api.moonshot.ai/anthropic",
+      "ANTHROPIC_AUTH_TOKEN": "<your_api_key>",
+      "ANTHROPIC_MODEL": "kimi-k2.5"
+    }
+  }
+}
+```
+
+### Creating Custom Profiles
+
+1. Preferences > Advanced > CLI Profiles
+2. Click **Add Profile**
+3. Enter profile name
+4. Paste settings JSON
+5. Check **Supports Thinking** if provider supports it
+6. Save profile
+
+### Using Custom Profiles
+
+1. Select custom provider from toolbar dropdown
+2. Profile's settings override global Claude CLI config
+3. Environment variables are merged with defaults
+
+## Per-Prompt Backend Overrides
+
+You can force specific backends for magic prompts:
+
+**Example**: Always use Claude for code reviews, Codex for commit messages:
+
+```typescript
+{
+  code_review_backend: 'claude',
+  commit_message_backend: 'codex',
+  investigate_issue_backend: null  // Use session default
+}
+```
+
+Configure in: Preferences > Magic Prompts > [prompt] > Backend Override
+
+## Version Management
+
+### Checking Versions
+
+**Via Jean UI**:
+- Preferences > Backends
+- View installed version for each backend
+
+**Via CLI**:
+```bash
+claude --version
+codex --version
+opencode --version
+```
+
+### Updating Backends
+
+**Via Jean UI**:
+1. Preferences > Backends
+2. Click **Check for Updates**
+3. If update available, click **Update**
+
+**Manual update**:
+```bash
+# Claude CLI
+brew upgrade claude-cli
+
+# Codex CLI
+codex update
+
+# OpenCode
+npm update -g opencode
+```
+
+## Backend Health Checks
+
+Jean monitors backend health:
+
+**Checks**:
+1. CLI binary exists and is executable
+2. Version can be queried
+3. Authentication is valid
+4. MCP servers are accessible (if configured)
+
+**View status**:
+- Preferences > Backends > [Backend] > Health Status
+
+**Manual check**:
+```bash
+claude auth status
+codex auth status
+opencode auth status
+```
+
+## Troubleshooting
+
+### Backend Not Found
+
+```
+Error: claude: command not found
+```
+
+**Solution**:
+1. Install backend via Jean UI or manually
+2. Add to PATH: `export PATH="$PATH:/path/to/cli"`
+3. Restart Jean
+
+### Authentication Failed
+
+```
+Error: Not authenticated. Run 'claude auth' first.
+```
+
+**Solution**:
+1. Open terminal
+2. Run: `claude auth` (or `codex auth`, `opencode auth`)
+3. Follow authentication flow
+4. Restart Jean
+
+### Wrong Backend Version
+
+```
+Error: This version of Jean requires Claude CLI >= 1.2.0
+```
+
+**Solution**: Update CLI to required version
+
+### MCP Servers Not Loading
+
+Ensure MCP config uses correct format for backend:
+- Claude: `.claude.json` / `.mcp.json`
+- Codex: `config.toml`  
+- OpenCode: `opencode.json`
+
+Backends don't share MCP configs.
+
+### Session Crashes After Backend Switch
+
+Backend cannot be changed mid-session. Create new session instead.
+
+## Best Practices
+
+- **Install all backends**: Maximum flexibility per-project
+- **Set project defaults**: Match backend to project needs
+  - Claude: Complex reasoning, long context
+  - Codex: Fast iteration, code-heavy tasks
+  - OpenCode: Custom providers, local models
+- **Test authentication**: Verify all backends before heavy use
+- **Keep updated**: Update CLIs regularly for new features
+- **Separate configs**: Use project configs to isolate backend settings
+- **Profile per project**: Create custom profiles for different API keys/endpoints
+
+## Advanced: Backend Detection
+
+Jean detects installed backends at startup:
+
+**Detection logic**:
+```rust
+pub async fn get_installed_backends() -> Vec<CliBackend> {
+    let mut backends = vec![];
+    
+    if is_claude_cli_installed().await { backends.push("claude"); }
+    if is_codex_cli_installed().await { backends.push("codex"); }
+    if is_opencode_cli_installed().await { backends.push("opencode"); }
+    
+    backends
+}
+```
+
+**Checked paths**:
+- System PATH
+- Common installation directories
+- Platform-specific locations
+
+**Cache duration**: 5 minutes (refreshed on manual check)

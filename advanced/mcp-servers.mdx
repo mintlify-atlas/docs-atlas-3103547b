@@ -1,0 +1,195 @@
+---
+title: 'MCP Servers'
+description: 'Configure and manage Model Context Protocol servers in Jean'
+---
+
+## Overview
+
+Jean supports the Model Context Protocol (MCP), allowing you to extend AI capabilities with custom tools and data sources. MCP servers can be configured globally or per-project, and work across all three supported backends: Claude CLI, Codex CLI, and OpenCode.
+
+## Configuration Files
+
+MCP servers are configured through backend-specific files:
+
+### Claude CLI
+- **Global**: `~/.claude.json` - Applied to all sessions
+- **Project**: `.mcp.json` in project root - Overrides global config
+
+### Codex CLI
+- **Global**: `~/.codex/config.toml` - Applied to all sessions
+- **Project**: `.codex/config.toml` in project root - Overrides global config
+
+### OpenCode
+- **Global**: `~/.config/opencode/opencode.json` - Applied to all sessions
+- **Project**: `opencode.json` in project root - Overrides global config
+
+## Managing MCP Servers
+
+### Viewing Available Servers
+
+1. Open **Preferences** (`Cmd/Ctrl + ,`)
+2. Navigate to **MCP Servers** tab
+3. View servers grouped by backend (Claude, Codex, OpenCode)
+
+### Enabling/Disabling Servers
+
+**Global Level** (all projects):
+
+1. In Preferences > MCP Servers, toggle individual servers
+2. Changes apply to all new sessions across all projects
+
+**Project Level** (per-project overrides):
+
+1. Right-click project in sidebar > **Project Settings**
+2. Navigate to **MCP Servers** tab
+3. Toggle project-specific servers
+4. Project settings override global defaults
+
+### Per-Session Configuration
+
+You can override MCP servers for individual sessions:
+
+1. Open chat session
+2. Click the **MCP** icon in toolbar
+3. Enable/disable specific servers for this session
+4. Changes apply immediately
+
+## Health Checks
+
+Jean includes built-in MCP health monitoring:
+
+```bash
+# Check server connectivity via CLI
+claude mcp check
+codex mcp check
+opencode mcp check
+```
+
+In the UI:
+1. Preferences > MCP Servers
+2. Click **Check Health** button
+3. View status for each server (running/stopped/error)
+
+## Auto-Enabling New Servers
+
+Jean automatically enables newly discovered MCP servers based on these rules:
+
+1. **Not explicitly disabled** by user
+2. **Not already enabled** in current config
+3. **Not in known servers list** (prevents re-enabling user-disabled servers)
+
+This allows new servers to activate automatically while respecting user preferences.
+
+## Configuration Examples
+
+### Claude CLI (.claude.json)
+
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/allowed/dir"],
+      "disabled": false
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "<your_token>"
+      }
+    }
+  }
+}
+```
+
+### Codex CLI (config.toml)
+
+```toml
+[[mcp_servers]]
+name = "filesystem"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/dir"]
+
+[[mcp_servers]]
+name = "github"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-github"]
+[mcp_servers.env]
+GITHUB_PERSONAL_ACCESS_TOKEN = "<your_token>"
+```
+
+### OpenCode (opencode.json)
+
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/dir"]
+    }
+  }
+}
+```
+
+## Backend Isolation
+
+MCP servers are isolated by backend:
+
+- **Claude sessions** only load servers from Claude config
+- **Codex sessions** only load servers from Codex config
+- **OpenCode sessions** only load servers from OpenCode config
+
+This prevents cross-backend server conflicts.
+
+## Default Enabled Servers
+
+You can configure which servers are enabled by default:
+
+**Global Defaults**:
+```typescript
+// Preferences
+default_enabled_mcp_servers: string[] // Server names enabled globally
+```
+
+**Project Defaults**:
+```typescript
+// Project Settings
+enabled_mcp_servers: string[] | null // null = inherit from global
+```
+
+## Troubleshooting
+
+### Server Not Appearing
+
+1. Verify config file syntax (JSON/TOML)
+2. Check file location matches backend
+3. Restart Jean to reload config
+
+### Server Showing as Unhealthy
+
+1. Run manual health check from Preferences
+2. Check server command exists: `which npx`
+3. Verify environment variables are set
+4. Review Jean logs: **Help > Open Logs Folder**
+
+### Server Not Loading in Session
+
+1. Verify server is enabled for current backend
+2. Check project-level overrides aren't disabling it
+3. Confirm session is using correct backend (Claude/Codex/OpenCode)
+
+## Best Practices
+
+- **Start with global config**: Set up common servers in global config
+- **Use project overrides sparingly**: Only override when project needs differ
+- **Test health regularly**: Run health checks after config changes
+- **Keep servers updated**: Update MCP server packages regularly
+- **Disable unused servers**: Reduce overhead by disabling unnecessary servers
+
+## Security Considerations
+
+- **Never commit tokens**: Use environment variables for sensitive data
+- **Restrict filesystem access**: Limit server paths to necessary directories
+- **Review server code**: Audit third-party MCP servers before use
+- **Use project configs for secrets**: Store project-specific tokens in project config (not committed)

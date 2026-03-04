@@ -1,0 +1,482 @@
+---
+title: "AI Chat"
+description: "Configure AI backends, models, thinking levels, and advanced chat features"
+---
+
+## Overview
+
+Jean supports three AI backends for chat sessions: **Claude CLI**, **Codex CLI**, and **OpenCode**. Each backend has different models, capabilities, and configuration options.
+
+## AI Backends
+
+```typescript
+type Backend = 'claude' | 'codex' | 'opencode'
+```
+
+### Claude CLI (Anthropic)
+
+The official Anthropic CLI for Claude models.
+
+**Models:**
+```typescript
+type ClaudeModel = 'opus' | 'opus-4.5' | 'sonnet' | 'sonnet-4.5' | 'haiku'
+
+const modelOptions = [
+  { value: 'opus', label: 'Claude Opus 4.6' },
+  { value: 'opus-4.5', label: 'Claude Opus 4.5' },
+  { value: 'sonnet', label: 'Claude Sonnet 4.6' },
+  { value: 'sonnet-4.5', label: 'Claude Sonnet 4.5' },
+  { value: 'haiku', label: 'Claude Haiku' },
+]
+```
+
+**Features:**
+- Extended thinking (up to 32K tokens)
+- Adaptive effort levels (Opus 4.6)
+- Prompt caching
+- MCP (Model Context Protocol) servers
+- Custom skills and commands
+
+<Tip>
+**Recommended for:** Most use cases. Claude models excel at coding, analysis, and following complex instructions.
+</Tip>
+
+### Codex CLI (OpenAI)
+
+OpenAI's Codex CLI with GPT models optimized for coding.
+
+**Models:**
+```typescript
+type CodexModel = 
+  | 'gpt-5.3-codex'
+  | 'gpt-5.2-codex'
+  | 'gpt-5.1-codex-max'
+  | 'gpt-5.2'
+  | 'gpt-5.1-codex-mini'
+
+const codexModelOptions = [
+  { value: 'gpt-5.3-codex', label: 'GPT 5.3 Codex' },
+  { value: 'gpt-5.2-codex', label: 'GPT 5.2 Codex' },
+  { value: 'gpt-5.1-codex-max', label: 'GPT 5.1 Codex Max' },
+  { value: 'gpt-5.2', label: 'GPT 5.2' },
+  { value: 'gpt-5.1-codex-mini', label: 'GPT 5.1 Codex Mini' },
+]
+```
+
+**Features:**
+- Multi-agent collaboration (experimental)
+- Reasoning effort levels (low, medium, high, xhigh)
+- Parallel task execution
+- JSON-RPC protocol for advanced tool control
+
+<Note>
+**Codex multi-agent mode** allows spawning sub-agents for parallel work (research, implementation, testing). Enable in Settings → AI → Codex Multi-Agent.
+</Note>
+
+### OpenCode
+
+A unified CLI interface supporting multiple AI providers.
+
+**Configuration:**
+```typescript
+interface AppPreferences {
+  default_backend: 'claude' | 'codex' | 'opencode'
+  selected_opencode_model: string  // Format: "opencode/<model>"
+}
+
+// Example OpenCode models
+'opencode/gpt-5.3-codex'
+'opencode/claude-opus-4.6'
+'opencode/custom-model'
+```
+
+**Features:**
+- Provider-agnostic interface
+- Supports custom endpoints
+- Unified tool system
+
+<Tip>
+**Use OpenCode when:** You want to switch between providers without changing backends, or you're using a custom AI endpoint.
+</Tip>
+
+## Model Selection
+
+### Session-Level Models
+
+Each session remembers its selected model:
+
+```typescript
+interface Session {
+  selected_model?: string      // Model ID (e.g., "opus", "gpt-5.3-codex")
+  backend?: Backend            // Which CLI to use
+}
+```
+
+Changing the model in a session only affects that session. New sessions inherit the project or global default.
+
+### Project-Level Defaults
+
+```typescript
+interface Project {
+  default_provider?: string | null   // Custom provider name
+  default_backend?: string | null    // 'claude', 'codex', or 'opencode'
+}
+```
+
+Set defaults per-project in Project Settings → General.
+
+### Global Defaults
+
+```typescript
+interface AppPreferences {
+  selected_model: ClaudeModel         // Default Claude model
+  selected_codex_model: CodexModel    // Default Codex model
+  selected_opencode_model: string     // Default OpenCode model
+  default_backend: CliBackend         // Default backend
+  default_provider: string | null     // Custom CLI profile name
+}
+```
+
+Configure in Settings → AI.
+
+## Thinking Levels (Claude)
+
+Claude models support extended thinking, where the AI reasons internally before responding.
+
+```typescript
+type ThinkingLevel = 'off' | 'think' | 'megathink' | 'ultrathink'
+
+const thinkingLevelOptions = [
+  { value: 'off', label: 'Off' },
+  { value: 'think', label: 'Think (4K)' },      // 4,000 thinking tokens
+  { value: 'megathink', label: 'Megathink (10K)' },  // 10,000 tokens
+  { value: 'ultrathink', label: 'Ultrathink (32K)' }, // 32,000 tokens (default)
+]
+```
+
+**How it works:**
+- AI spends tokens reasoning internally
+- Thinking is shown in collapsible sections
+- Results in more thorough, considered responses
+- Costs more tokens (but improves quality)
+
+<Tip>
+Use **Think (4K)** for quick questions, **Megathink (10K)** for moderate problems, and **Ultrathink (32K)** for complex architectural decisions.
+</Tip>
+
+## Effort Levels (Opus 4.6)
+
+Opus 4.6 introduced adaptive effort levels instead of fixed thinking budgets:
+
+```typescript
+type EffortLevel = 'low' | 'medium' | 'high' | 'max'
+
+const effortLevelOptions = [
+  { value: 'low', label: 'Low', description: 'Minimal thinking' },
+  { value: 'medium', label: 'Medium', description: 'Moderate thinking' },
+  { value: 'high', label: 'High', description: 'Deep reasoning' },
+  { value: 'max', label: 'Max', description: 'No limits' },
+]
+```
+
+**Adaptive thinking:**
+- AI decides how much to think based on task complexity
+- **Low**: Skips thinking for simple tasks
+- **Medium**: Thinks when needed
+- **High**: Almost always thinks deeply (default)
+- **Max**: No constraints on thinking depth
+
+<Note>
+Effort levels **only work with Claude Opus 4.6** (`opus`) on Claude CLI >= 2.1.32. Other models use thinking levels.
+</Note>
+
+## Reasoning Effort (Codex)
+
+```typescript
+type CodexReasoningEffort = 'low' | 'medium' | 'high' | 'xhigh'
+
+interface AppPreferences {
+  default_codex_reasoning_effort: CodexReasoningEffort
+}
+```
+
+Controls how much internal reasoning Codex models perform before responding.
+
+## Custom Providers
+
+Use alternative AI providers via custom CLI profiles:
+
+```typescript
+interface CustomCliProfile {
+  name: string                   // Display name (e.g., "OpenRouter")
+  settings_json: string          // JSON matching Claude CLI settings format
+  file_path?: string             // Path to settings file on disk
+  supports_thinking?: boolean    // Provider supports thinking/effort (default: true)
+}
+```
+
+### Predefined Profiles
+
+Jean includes built-in profiles for popular providers:
+
+<Accordion title="OpenRouter">
+```json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://openrouter.ai/api",
+    "ANTHROPIC_API_KEY": "",
+    "ANTHROPIC_AUTH_TOKEN": "<your_api_key>"
+  }
+}
+```
+</Accordion>
+
+<Accordion title="MiniMax">
+```json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://api.minimax.io/anthropic",
+    "ANTHROPIC_AUTH_TOKEN": "<your-minimax-api-key>",
+    "API_TIMEOUT_MS": "3000000",
+    "ANTHROPIC_MODEL": "MiniMax-M2.5"
+  }
+}
+```
+Note: MiniMax does not support thinking levels.
+</Accordion>
+
+<Accordion title="Z.ai">
+```json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
+    "ANTHROPIC_AUTH_TOKEN": "<your-zai-api-key>",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-4.7"
+  }
+}
+```
+</Accordion>
+
+### Adding Custom Providers
+
+1. Go to **Settings → AI → Custom Providers**
+2. Click **Add Custom Provider**
+3. Enter a name (e.g., "My Custom API")
+4. Paste Claude CLI settings JSON:
+   ```json
+   {
+     "env": {
+       "ANTHROPIC_BASE_URL": "https://your-api.com",
+       "ANTHROPIC_AUTH_TOKEN": "your-api-key"
+     }
+   }
+   ```
+5. Toggle "Supports thinking" if applicable
+6. Save
+
+The provider will appear in the model dropdown across Jean.
+
+## MCP Servers
+
+**Model Context Protocol (MCP)** allows AI assistants to access external tools and data sources.
+
+### Configuration Hierarchy
+
+1. **Global**: `~/.claude/mcp.json` (or Codex/OpenCode equivalents)
+2. **Per-project**: `<project-root>/mcp.json`
+3. **Per-session**: Session-specific overrides
+
+### Enabling MCP Servers
+
+```typescript
+interface Project {
+  enabled_mcp_servers?: string[] | null  // null = inherit global
+  known_mcp_servers?: string[]           // All servers ever seen
+}
+
+interface Session {
+  enabled_mcp_servers?: string[]         // Per-session override
+}
+```
+
+**Settings UI:**
+- **Global**: Settings → AI → MCP Servers
+- **Per-project**: Project Settings → MCP Servers
+- **Per-session**: Session menu → MCP Servers
+
+<Note>
+Disabling an MCP server adds it to `known_mcp_servers` to prevent auto-re-enabling when new servers are discovered.
+</Note>
+
+## Custom System Prompts
+
+### Global System Prompt
+
+Appended to every session across all projects:
+
+```typescript
+interface AppPreferences {
+  magic_prompts: {
+    global_system_prompt: string | null
+  }
+}
+```
+
+Set in **Settings → Advanced → Magic Prompts → Global System Prompt**.
+
+### Per-Project System Prompt
+
+Appended to all sessions in a specific project:
+
+```typescript
+interface Project {
+  custom_system_prompt?: string
+}
+```
+
+Set in **Project Settings → General → Custom System Prompt**.
+
+<Tip>
+Use project prompts for project-specific conventions:
+- "Always write tests with Vitest"
+- "Follow the Airbnb style guide"
+- "Use functional components with hooks"
+</Tip>
+
+## Parallel Execution Prompt
+
+Encourage AI to use parallel sub-agents:
+
+```typescript
+interface AppPreferences {
+  parallel_execution_prompt_enabled: boolean
+  magic_prompts: {
+    parallel_execution: string | null
+  }
+}
+```
+
+**Default prompt:**
+```
+In plan mode, structure plans so subagents can work simultaneously.
+In build/execute mode, use subagents in parallel for faster implementation.
+
+When launching multiple Task subagents, prefer sending them in a single
+message rather than sequentially.
+```
+
+Enable in **Settings → Advanced → Parallel Execution**.
+
+## AI Language Preference
+
+```typescript
+interface AppPreferences {
+  ai_language: string  // e.g., "Spanish", "French", "Japanese" (empty = default)
+}
+```
+
+Request that AI responses use a specific language. Set in **Settings → General → AI Language**.
+
+<Note>
+This adds a note to the system prompt like: "Please respond in Spanish." The AI will do its best, but technical terms may remain in English.
+</Note>
+
+## Magic Prompt Overrides
+
+Background operations (PR creation, commit messages, code review) use customizable prompts with per-prompt model/backend overrides:
+
+```typescript
+interface MagicPromptModels {
+  investigate_issue_model: MagicPromptModel      // Default: opus
+  pr_content_model: MagicPromptModel             // Default: haiku
+  commit_message_model: MagicPromptModel         // Default: haiku
+  code_review_model: MagicPromptModel            // Default: haiku
+  // ... and more
+}
+
+interface MagicPromptBackends {
+  investigate_issue_backend: string | null       // Default: null (use global)
+  pr_content_backend: string | null
+  // ... and more
+}
+```
+
+Configure in **Settings → Advanced → Magic Prompts**. This lets you use:
+- Fast models (Haiku, GPT-5.1-mini) for simple tasks
+- Powerful models (Opus, GPT-5.3) for complex analysis
+- Different backends for different operations
+
+## Chat Features
+
+### Image Support
+
+Paste or drag images into chat:
+
+```typescript
+interface PendingImage {
+  id: string
+  path: string         // Saved to app data directory
+  filename: string
+  loading?: boolean    // Processing (resize/compress)
+}
+```
+
+- **Auto-processed**: Resized to max 1568px (Claude's limit), compressed (PNG→JPEG if opaque)
+- **Token cost**: `(width × height) / 750` tokens
+- **Formats**: PNG, JPEG, WebP (GIFs skip processing to preserve animation)
+
+### File Mentions (@)
+
+Reference files from your worktree:
+
+```typescript
+interface PendingFile {
+  id: string
+  relativePath: string     // Relative to worktree root
+  extension: string
+  isDirectory: boolean     // True for directory mentions
+}
+```
+
+Type `@` in chat to search files. Selected files are attached and read by the AI.
+
+### Skill Mentions (/)
+
+Attach Claude CLI skills:
+
+```typescript
+interface ClaudeSkill {
+  name: string         // Filename without .md
+  path: string         // Full path to ~/.claude/skills/<name>.md
+  description?: string
+}
+```
+
+Type `/` to search available skills. Skills provide context and instructions the AI can reference.
+
+### Large Text Pastes
+
+Pasting >500 characters auto-saves as a file:
+
+```typescript
+interface PendingTextFile {
+  id: string
+  path: string         // Saved as paste-<timestamp>-<id>.txt
+  filename: string
+  size: number
+  content: string      // Full content for preview
+}
+```
+
+This avoids bloating the message and allows the AI to read the content as a file.
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Execution Modes" icon="gears" href="/core/execution-modes">
+    Learn about plan, build, and yolo modes
+  </Card>
+  <Card title="Sessions" icon="comments" href="/core/sessions">
+    Understand session management and lifecycle
+  </Card>
+</CardGroup>

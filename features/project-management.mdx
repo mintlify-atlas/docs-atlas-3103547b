@@ -1,0 +1,279 @@
+---
+title: Project Management
+description: Managing projects, custom avatars, MCP servers, and project-level settings in Jean
+---
+
+## Overview
+
+Jean provides powerful project management capabilities that let you organize multiple Git repositories, configure project-specific settings, and manage MCP (Model Context Protocol) servers. Projects can be organized into folders for better structure.
+
+## Key Capabilities
+
+### Project Types
+
+Jean supports two types of project entries:
+
+**Git Projects** - Real repositories that you work with:
+- Linked to an actual Git repository on your machine
+- Have a default branch for creating worktrees
+- Can spawn multiple worktrees for parallel development
+- Support custom avatars and project-specific settings
+
+**Folders** - Organizational containers:
+- Group related projects together
+- No Git repository association
+- Help organize large project lists in the sidebar
+
+### Custom Project Avatars
+
+Personalize your projects with custom avatar images:
+- Upload any image file (PNG, JPG, WebP, etc.)
+- Images are stored in the app data directory
+- Automatically resized and optimized for display
+- Avatar path stored as `avatar_path` in project metadata
+
+**Setting a custom avatar:**
+1. Right-click on a project in the sidebar
+2. Select "Settings" or click the settings icon
+3. Navigate to the "General" pane
+4. Click "Browse" to select an image file
+5. Avatar appears immediately in the project list
+
+### MCP Server Management
+
+**What are MCP Servers?**
+
+MCP servers extend AI capabilities with custom tools and integrations. Each project can have its own set of enabled MCP servers.
+
+**Project-Level MCP Configuration:**
+- `enabled_mcp_servers`: List of MCP server names enabled for this project
+- `known_mcp_servers`: All servers ever seen (prevents re-enabling disabled servers)
+- Inherits from global settings when not explicitly set
+
+**Backend-Specific Configs:**
+Jean supports three CLI backends, each with their own MCP configuration:
+- **Claude CLI**: `~/.claude.json` + `.mcp.json` in worktree
+- **Codex CLI**: `~/.codex/config.toml` + `.codex/config.toml` in worktree  
+- **OpenCode**: `~/.config/opencode/opencode.json` + `opencode.json` in worktree
+
+**Implementation:**
+```typescript
+// From src/services/mcp.ts
+export function useMcpServers(
+  worktreePath: string | null | undefined,
+  backend: CliBackend = 'claude'
+) {
+  return useQuery({
+    queryKey: [MCP_SERVERS_KEY, worktreePath ?? '', backend],
+    queryFn: async () => {
+      return invoke<McpServerInfo[]>('get_mcp_servers', {
+        backend,
+        worktreePath: worktreePath ?? null,
+      })
+    },
+  })
+}
+```
+
+### Project Settings
+
+**General Settings** (`src/types/projects.ts`):
+```typescript
+interface Project {
+  id: string                      // UUID v4 identifier
+  name: string                    // Display name
+  path: string                    // Absolute path to Git repo
+  default_branch: string          // Base branch for worktrees
+  parent_id?: string              // Parent folder (if nested)
+  avatar_path?: string            // Custom avatar image path
+  worktrees_dir?: string | null   // Custom worktrees location
+  
+  // AI Configuration
+  custom_system_prompt?: string   // Project-specific prompt
+  default_provider?: string | null // Provider profile name
+  default_backend?: string | null  // CLI backend (claude/codex/opencode)
+  
+  // MCP Configuration  
+  enabled_mcp_servers?: string[] | null
+  known_mcp_servers?: string[]
+  
+  // Linear Integration
+  linear_api_key?: string | null  // Per-project Linear API key
+  linear_team_id?: string | null  // Filter issues by team
+}
+```
+
+**Custom System Prompts:**
+Add project-specific instructions that are appended to every chat session:
+- Coding style guidelines
+- Architecture patterns
+- Project-specific constraints
+- Testing requirements
+
+**Custom Worktrees Location:**
+Override the default `~/jean` directory for worktree storage:
+- Set via "Worktrees Location" in General settings pane
+- Supports any directory on your system
+- Automatically creates `<custom-dir>/<project-name>/<worktree-name>` structure
+- Prevents collisions when multiple projects share the same base directory
+
+**Implementation:**
+```rust
+// From src-tauri/src/projects/storage.rs
+pub fn get_project_worktrees_dir(name: &str, custom_base_dir: Option<&str>) -> PathBuf {
+    match custom_base_dir {
+        Some(dir) => PathBuf::from(dir).join(name),
+        None => dirs::home_dir()
+            .unwrap_or_else(|| PathBuf::from("."))
+            .join("jean")
+            .join(name),
+    }
+}
+```
+
+## How to Use
+
+### Adding a New Project
+
+1. Click the "+" button in the sidebar
+2. Select "Add Project" or "Add Folder"
+3. For projects: Browse to select your Git repository
+4. Jean automatically detects the default branch
+5. Project appears in the sidebar immediately
+
+### Organizing Projects
+
+**Create folder structure:**
+1. Add a folder from the "+" menu
+2. Drag projects into folders
+3. Reorder using drag and drop
+4. Folders can contain both projects and nested folders
+
+**Project ordering:**
+- Controlled by the `order` field (lower = higher in list)
+- Drag and drop automatically updates order values
+- Saved immediately to disk
+
+### Configuring Project Settings
+
+1. Right-click project → Settings (or click settings icon)
+2. **General Pane:**
+   - Edit project name and default branch
+   - Upload custom avatar
+   - Set custom worktrees location
+   - Configure Linear integration
+
+3. **AI Pane:**
+   - Set custom system prompt
+   - Choose default backend (Claude/Codex/OpenCode)
+   - Select default provider profile
+
+4. **MCP Servers Pane:**
+   - Enable/disable MCP servers for this project
+   - View server health status
+   - Separate configs for each backend
+
+### Backend & Provider Configuration
+
+**Default Backend:**
+Choose which AI backend sessions use by default:
+- Claude CLI (Anthropic models)
+- Codex CLI (OpenAI Codex models)
+- OpenCode (community CLI)
+
+**Custom Provider Profiles:**
+Use alternative API providers:
+- OpenRouter
+- MiniMax
+- Z.ai
+- Moonshot
+- Custom profiles via Settings → Providers
+
+Provider profiles configure the base URL and API key via environment variables passed to the CLI.
+
+## Configuration Options
+
+### Storage Location
+
+Projects are stored in `app_data_dir/projects.json`:
+- macOS: `~/Library/Application Support/Jean/projects.json`
+- Windows: `%APPDATA%/Jean/projects.json`
+- Linux: `~/.local/share/Jean/projects.json`
+
+### Avatar Storage
+
+Custom avatars are stored in `app_data_dir/avatars/`:
+- Original filename is hashed for uniqueness
+- Supported formats: PNG, JPG, WebP, GIF
+- Automatically cleaned up when project is deleted
+
+## Best Practices
+
+### Project Organization
+
+**Use folders for logical grouping:**
+```
+Work/
+  ├─ Client A Project
+  ├─ Client B Project
+  └─ Internal Tools/
+      ├─ CI/CD Pipeline
+      └─ Monitoring Dashboard
+
+Personal/
+  ├─ Side Projects
+  └─ Learning/
+      ├─ Rust Tutorial
+      └─ React Experiments
+```
+
+### System Prompts
+
+**Keep prompts concise and actionable:**
+```markdown
+## Code Style
+- Use TypeScript strict mode
+- Prefer functional components
+- All new features require tests
+
+## Architecture
+- Follow the existing Zustand + TanStack Query pattern
+- UI state in Zustand, persistent data in TanStack Query
+- Keep components under 300 lines
+```
+
+### MCP Server Management
+
+**Enable only what you need:**
+- MCP servers can impact performance
+- Enable globally for common tools
+- Enable per-project for specialized integrations
+- Use health checks to identify problematic servers
+
+### Worktrees Location
+
+**When to use custom locations:**
+- Different projects on different drives (SSD vs HDD)
+- Corporate policies requiring specific directories
+- Managing disk space across volumes
+- Separating work and personal projects physically
+
+**Path resolution example:**
+- Project: `jean-app`
+- Custom base: `/Volumes/Work`
+- Worktree name: `fix-auth-bug`
+- Final path: `/Volumes/Work/jean-app/fix-auth-bug`
+
+### Linear Integration
+
+**Per-project API keys:**
+- Each project can have its own Linear API key
+- Useful for multi-team environments
+- Falls back to global API key if not set
+- Filter by team ID to show relevant issues only
+
+**Getting your Linear API key:**
+1. Go to Linear Settings → API
+2. Create a new personal API key
+3. Paste into Jean project settings
+4. Issues appear in the GitHub integration panel
