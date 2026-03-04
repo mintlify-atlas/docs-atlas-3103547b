@@ -1,0 +1,121 @@
+{
+  "projectType": "saas",
+  "projectName": "Jean",
+  "projectDescription": "A desktop AI assistant for managing multiple projects, worktrees, and chat sessions with Claude CLI, Codex CLI, and OpenCode.",
+  "theme": "aspen",
+  "primaryColor": "#844cfb",
+  "lightColor": "#844cfb",
+  "darkColor": "#452d74",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "core/projects-and-worktrees",
+              "core/sessions",
+              "core/ai-chat",
+              "core/execution-modes"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/project-management",
+              "features/worktree-automation",
+              "features/session-management",
+              "features/ai-integration",
+              "features/magic-commands",
+              "features/github-integration",
+              "features/developer-tools",
+              "features/remote-access"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/setting-up-projects",
+              "guides/working-with-worktrees",
+              "guides/managing-sessions",
+              "guides/using-magic-commands",
+              "guides/github-workflows",
+              "guides/customization",
+              "guides/keyboard-shortcuts"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/mcp-servers",
+              "advanced/custom-prompts",
+              "advanced/remote-web-access",
+              "advanced/multi-backend-setup",
+              "advanced/performance-tips"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/configuration",
+              "reference/cli-backends",
+              "reference/keyboard-shortcuts",
+              "reference/troubleshooting",
+              "reference/faq"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api/overview",
+              "api/authentication"
+            ]
+          },
+          {
+            "group": "Endpoints",
+            "pages": [
+              "api/projects",
+              "api/worktrees",
+              "api/sessions",
+              "api/chat"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Multi-project and git worktree management",
+    "AI chat with Claude CLI, Codex CLI, and OpenCode support",
+    "Magic commands for PR creation, code review, and commit messages",
+    "GitHub integration with issue and PR investigation",
+    "Built-in terminal and developer tools",
+    "Remote web access with HTTP server and WebSocket support",
+    "Session management with archiving and recovery",
+    "Customizable themes, fonts, and keyboard shortcuts"
+  ],
+  "publicApiSurface": [
+    "Projects API - create, list, update, delete projects",
+    "Worktrees API - create, archive, restore worktrees",
+    "Sessions API - manage chat sessions and execution modes",
+    "Chat API - send messages, stream responses",
+    "Magic commands - investigate_issue, investigate_pr, create_pr, code_review, commit_message",
+    "GitHub integration - checkout PRs, investigate workflows",
+    "Terminal API - open terminals in worktrees",
+    "Preferences API - customize settings and keybindings"
+  ]
+}
